@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const userController = require('./controllers/userController');
 
 // Load env vars
 dotenv.config();
@@ -29,6 +30,16 @@ app.get('/', (req, res) => {
   res.send('API is running');
 });
 
+// Cron job để kiểm tra tài khoản hết hạn
+setInterval(async () => {
+  console.log('Đang kiểm tra tài khoản hết hạn...');
+  await userController.checkExpiredMemberships();
+}, 24 * 60 * 60 * 1000); // Chạy mỗi 24 giờ
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server đang chạy trên port ${PORT}`);
+  // Kiểm tra tài khoản hết hạn khi khởi động server
+  userController.checkExpiredMemberships();
+});

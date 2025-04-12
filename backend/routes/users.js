@@ -79,12 +79,8 @@ router.put(
   userController.updateTrainer
 );
 
-// Trong routes/users.js, trước route bị lỗi
-console.log("Controller methods:", Object.keys(userController));
-console.log("getCustomer is function:", typeof userController.getCustomer === 'function');
-console.log("getTrainer is function:", typeof userController.getTrainer === 'function');
 // @route   DELETE api/users/customers/:id
-// @desc    Xóa khách hàng
+// @desc    Vô hiệu hóa tài khoản khách hàng
 // @access  Private (admin)
 router.delete(
   '/customers/:id',
@@ -92,13 +88,13 @@ router.delete(
   userController.deleteCustomer
 );
 
-// @route   DELETE api/users/trainers/:id
-// @desc    Xóa huấn luyện viên
-// @access  Private (admin)
-router.delete(
-  '/trainers/:id',
+// @route   PUT api/users/customers/:id/activate
+// @desc    Kích hoạt tài khoản khách hàng
+// @access  Private (admin only)
+router.put(
+  '/customers/:id/activate',
   [auth, roleCheck('admin')],
-  userController.deleteTrainer
+  userController.activateCustomer
 );
 
 // @route   GET api/users/customers/:id
