@@ -37,8 +37,6 @@ router.post(
   authController.login
 );
 
-
-
 // @route   GET api/auth/me
 // @desc    Lấy thông tin người dùng đã đăng nhập
 // @access  Private

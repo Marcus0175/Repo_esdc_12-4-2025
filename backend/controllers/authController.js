@@ -88,7 +88,7 @@ exports.register = async (req, res) => {
   }
 };
 
-// Trong authController.js
+// Đăng nhập
 exports.login = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -131,8 +131,16 @@ exports.login = async (req, res) => {
       { expiresIn: '24h' },
       (err, token) => {
         if (err) throw err;
-        console.log('Token generated:', token.substring(0, 20) + '...');
-        res.json({ token });
+        res.json({ 
+          token,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            fullName: user.fullName,
+            role: user.role
+          }
+        });
       }
     );
   } catch (err) {

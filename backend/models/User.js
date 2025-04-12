@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-// Giữ lại bcrypt vì có thể cần so sánh mật khẩu đã hash trước đó
 const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
@@ -38,16 +37,14 @@ const UserSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Sửa phương thức so sánh password để hỗ trợ cả mật khẩu thường và mật khẩu đã hash
-UserSchema.methods.comparePassword = async function(password) {
-  // Nếu mật khẩu không hash, so sánh trực tiếp
-  if (this.password === password) {
-    return true;
-  }
-  
-  // Nếu mật khẩu đã hash, dùng bcrypt để so sánh
+// So sánh mật khẩu
+UserSchema.methods.comparePassword = async function(candidatePassword) {
   try {
-    return await bcrypt.compare(password, this.password);
+    // Check if password is hashed
+    if (this.password.length < 60) { // bcrypt hash always 60 chars
+      return candidatePassword === this.password;
+    }
+    return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
     return false;
   }

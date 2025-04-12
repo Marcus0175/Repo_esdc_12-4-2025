@@ -14,26 +14,20 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  CircularProgress
 } from '@mui/material';
-import { PersonAddOutlined } from '@mui/icons-material';
+import { PersonAddOutlined, ArrowBack } from '@mui/icons-material';
 
 const Register = () => {
   const authContext = useContext(AuthContext);
   const alertContext = useContext(AlertContext);
 
-  const { register, error, clearErrors, isAuthenticated, user } = authContext;
+  const { register, error, clearErrors, user } = authContext;
   const { setAlert } = alertContext;
 
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (error) {
-      setAlert(error, 'error');
-      clearErrors();
-    }
-    // eslint-disable-next-line
-  }, [error]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -47,15 +41,28 @@ const Register = () => {
 
   const { username, password, password2, email, fullName, phoneNumber, role } = formData;
 
+  useEffect(() => {
+    if (error) {
+      setAlert(error, 'error');
+      clearErrors();
+      setIsSubmitting(false);
+    }
+  }, [error, setAlert, clearErrors]);
+
   const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const onSubmit = e => {
+  const onSubmit = async e => {
     e.preventDefault();
-    
+    setIsSubmitting(true);
+
     if (password !== password2) {
       setAlert('Mật khẩu không khớp', 'error');
-    } else {
-      register({
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      await register({
         username,
         password,
         email,
@@ -63,6 +70,10 @@ const Register = () => {
         phoneNumber,
         role
       });
+      setAlert('Đăng ký tài khoản thành công', 'success');
+      navigate('/dashboard');
+    } catch (err) {
+      setIsSubmitting(false);
     }
   };
 
@@ -81,17 +92,28 @@ const Register = () => {
           p: 4
         }}
       >
-        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
+        <Box display="flex" width="100%" alignItems="center" mb={3}>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/dashboard')}
+            sx={{ mr: 2 }}
+          >
+            Quay lại
+          </Button>
+          <Typography variant="h5" component="h1">
+            Đăng ký tài khoản mới
+          </Typography>
+        </Box>
+
+        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
           <PersonAddOutlined />
         </Avatar>
-        <Typography component="h1" variant="h5">
-          Đăng ký tài khoản
-        </Typography>
+
         <Box component="form" onSubmit={onSubmit} sx={{ mt: 3 }}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
-                autoComplete="full-name"
                 name="fullName"
                 required
                 fullWidth
@@ -120,7 +142,7 @@ const Register = () => {
                 id="email"
                 label="Email"
                 name="email"
-                autoComplete="email"
+                type="email"
                 value={email}
                 onChange={onChange}
               />
@@ -177,7 +199,7 @@ const Register = () => {
                     <MenuItem value="receptionist">Lễ tân</MenuItem>
                   )}
                   {canAddAdminReceptionist && (
-                    <MenuItem value="admin">Quản lý</MenuItem>
+                    <MenuItem value="admin">Quản trị viên</MenuItem>
                   )}
                 </Select>
               </FormControl>
@@ -188,8 +210,13 @@ const Register = () => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
+            disabled={isSubmitting}
           >
-            Đăng ký
+            {isSubmitting ? (
+              <CircularProgress size={24} />
+            ) : (
+              'Đăng ký'
+            )}
           </Button>
         </Box>
       </Paper>

@@ -19,7 +19,7 @@ const AuthState = props => {
   const initialState = {
     token: localStorage.getItem('token'),
     isAuthenticated: null,
-    loading: true,
+    loading: false,
     user: null,
     error: null
   };
@@ -28,10 +28,6 @@ const AuthState = props => {
 
   // Load User
   const loadUser = async () => {
-    if (localStorage.getItem('token')) {
-      setAuthToken(localStorage.getItem('token'));
-    }
-
     try {
       const res = await api.get('/auth/me');
 
@@ -44,67 +40,41 @@ const AuthState = props => {
     }
   };
 
-  // Register User
-  const register = async formData => {
+  // Login User
+  const login = async formData => {
     try {
-      const res = await api.post('/auth/register', formData);
-
+      const res = await api.post('/auth/login', formData);
+      
       dispatch({
-        type: REGISTER_SUCCESS,
+        type: LOGIN_SUCCESS,
         payload: res.data
       });
 
-      loadUser();
+      // Set token to localStorage and axios headers
+      if (res.data.token) {
+        localStorage.setItem('token', res.data.token);
+        setAuthToken(res.data.token);
+      }
+
+      // Load user info after successful login
+      await loadUser();
     } catch (err) {
       dispatch({
-        type: REGISTER_FAIL,
-        payload: err.response?.data?.message || 'Đăng ký thất bại'
+        type: LOGIN_FAIL,
+        payload: err.response?.data?.message || 'Đăng nhập thất bại'
       });
     }
   };
 
-// Trong AuthState.js
-const login = async formData => {
-  try {
-    const res = await api.post('/auth/login', formData);
-    
-    // Kiểm tra xem response có token không
-    if (!res.data.token) {
-      return dispatch({
-        type: LOGIN_FAIL,
-        payload: 'Không nhận được token từ server'
-      });
-    }
-    
-    // Lưu token trực tiếp vào localStorage
-    localStorage.setItem('token', res.data.token);
-    
-    // Đặt token vào header cho các request tiếp theo
-    setAuthToken(res.data.token);
-    
-    dispatch({
-      type: LOGIN_SUCCESS,
-      payload: res.data
-    });
-
-    // Tải thông tin người dùng
-    await loadUser();
-  } catch (err) {
-    dispatch({
-      type: LOGIN_FAIL,
-      payload: err.response?.data?.message || 'Đăng nhập thất bại'
-    });
-  }
-};
-
-
   // Logout
-  const logout = () => dispatch({ type: LOGOUT });
-
-  
+  const logout = () => {
+    dispatch({ type: LOGOUT });
+  };
 
   // Clear Errors
-  const clearErrors = () => dispatch({ type: CLEAR_ERRORS });
+  const clearErrors = () => {
+    dispatch({ type: CLEAR_ERRORS });
+  };
 
   return (
     <AuthContext.Provider
@@ -114,10 +84,9 @@ const login = async formData => {
         loading: state.loading,
         user: state.user,
         error: state.error,
-        register,
-        loadUser,
         login,
         logout,
+        loadUser,
         clearErrors
       }}
     >

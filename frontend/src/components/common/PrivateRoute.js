@@ -1,24 +1,27 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import AuthContext from '../../contexts/auth/authContext';
+import { Box, CircularProgress } from '@mui/material';
 
 const PrivateRoute = ({ component: Component, roles, ...rest }) => {
   const authContext = useContext(AuthContext);
-  const { isAuthenticated, user, loading, loadUser } = authContext;
+  const { isAuthenticated, user, loading } = authContext;
 
-  useEffect(() => {
-    // Nếu có token nhưng chưa load thông tin user
-    if (localStorage.getItem('token') && !user) {
-      loadUser();
-    }
-  }, []); // Chỉ chạy một lần khi component được mount
-
-  if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', marginTop: '100px' }}>Đang tải...</div>;
+  if (!isAuthenticated && !loading) {
+    return <Navigate to="/login" />;
   }
 
-  if (!isAuthenticated || !localStorage.getItem('token')) {
-    return <Navigate to="/login" />;
+  if (!user && isAuthenticated) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (roles && !roles.includes(user?.role)) {

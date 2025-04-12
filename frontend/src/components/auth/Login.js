@@ -9,8 +9,7 @@ import {
   TextField,
   Button,
   Paper,
-  Avatar,
-  CircularProgress
+  Avatar
 } from '@mui/material';
 import { LockOutlined } from '@mui/icons-material';
 
@@ -18,14 +17,19 @@ const Login = () => {
   const authContext = useContext(AuthContext);
   const alertContext = useContext(AlertContext);
 
-  const { login, error, clearErrors, isAuthenticated, loading } = authContext;
+  const { login, error, clearErrors, isAuthenticated } = authContext;
   const { setAlert } = alertContext;
 
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [formData, setFormData] = useState({
+    username: '',
+    password: ''
+  });
+
+  const { username, password } = formData;
 
   useEffect(() => {
-    // Nếu đã xác thực, chuyển hướng đến dashboard
     if (isAuthenticated) {
       navigate('/dashboard');
     }
@@ -33,30 +37,18 @@ const Login = () => {
     if (error) {
       setAlert(error, 'error');
       clearErrors();
-      setIsSubmitting(false);
     }
-  }, [error, isAuthenticated, clearErrors, setAlert, navigate]);
+  }, [error, isAuthenticated, setAlert, clearErrors, navigate]);
 
-  const [user, setUser] = useState({
-    username: '',
-    password: ''
-  });
-
-  const { username, password } = user;
-
-  const onChange = e => setUser({ ...user, [e.target.name]: e.target.value });
+  const onChange = e => 
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const onSubmit = e => {
     e.preventDefault();
-    
     if (username === '' || password === '') {
-      setAlert('Vui lòng nhập tất cả các trường', 'error');
+      setAlert('Vui lòng nhập đầy đủ thông tin', 'error');
     } else {
-      setIsSubmitting(true);
-      login({
-        username,
-        password
-      });
+      login({ username, password });
     }
   };
 
@@ -90,7 +82,6 @@ const Login = () => {
             autoFocus
             value={username}
             onChange={onChange}
-            disabled={isSubmitting}
           />
           <TextField
             margin="normal"
@@ -103,20 +94,14 @@ const Login = () => {
             autoComplete="current-password"
             value={password}
             onChange={onChange}
-            disabled={isSubmitting}
           />
           <Button
             type="submit"
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
-            disabled={isSubmitting || loading}
           >
-            {isSubmitting || loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Đăng nhập'
-            )}
+            Đăng nhập
           </Button>
         </Box>
       </Paper>

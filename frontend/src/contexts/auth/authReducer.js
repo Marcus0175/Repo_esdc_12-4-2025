@@ -22,7 +22,7 @@ const authReducer = (state, action) => {
     case LOGIN_SUCCESS:
       return {
         ...state,
-        ...action.payload,
+        token: action.payload.token,
         isAuthenticated: true,
         loading: false
       };
