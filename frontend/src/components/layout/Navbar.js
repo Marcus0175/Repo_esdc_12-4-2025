@@ -1,108 +1,101 @@
-import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useContext, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import AuthContext from '../../contexts/auth/authContext';
 import {
   AppBar,
   Box,
   Toolbar,
   Typography,
-  Button,
   IconButton,
   Menu,
-  MenuItem
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Avatar,
 } from '@mui/material';
 import {
-  Menu as MenuIcon,
-  AccountCircle,
-  FitnessCenter
+  Person,
+  ExitToApp,
+  KeyboardArrowDown
 } from '@mui/icons-material';
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const authContext = useContext(AuthContext);
-  const { isAuthenticated, logout, user } = authContext;
+  const { user, logout } = authContext;
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  const [anchorEl, setAnchorEl] = React.useState(null);
-
-  const handleMenu = (event) => {
+  const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleClose = () => {
+  const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
-  const onLogout = () => {
+  const handleLogout = () => {
     logout();
-    handleClose();
+    navigate('/login');
   };
 
-  const authLinks = (
-    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <Typography variant="body1" sx={{ mr: 2 }}>
-        Xin chào, {user && user.fullName}
-      </Typography>
-      <IconButton
-        size="large"
-        aria-label="account of current user"
-        aria-controls="menu-appbar"
-        aria-haspopup="true"
-        onClick={handleMenu}
-        color="inherit"
-      >
-        <AccountCircle />
-      </IconButton>
-      <Menu
-        id="menu-appbar"
-        anchorEl={anchorEl}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        keepMounted
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-      >
-        <MenuItem onClick={handleClose} component={Link} to="/profile">Hồ sơ</MenuItem>
-        <MenuItem onClick={onLogout}>Đăng xuất</MenuItem>
-      </Menu>
-    </Box>
-  );
-
-  const guestLinks = (
-    <Box>
-      <Button color="inherit" component={Link} to="/login">
-        Đăng nhập
-      </Button>
-    </Box>
-  );
-
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="menu"
-            sx={{ mr: 2 }}
+    <AppBar
+      position="fixed"
+      sx={{
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+        backgroundColor: '#1976d2'
+      }}
+    >
+      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Typography variant="h6" component={Link} to="/" sx={{ color: 'white', textDecoration: 'none' }}>
+          Family Gym
+        </Typography>
+        {user && (
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              cursor: 'pointer' 
+            }}
+            onClick={handleMenuOpen}
           >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>
-              <FitnessCenter sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Gym Management System
-            </Link>
-          </Typography>
-          {isAuthenticated ? authLinks : guestLinks}
-        </Toolbar>
-      </AppBar>
-    </Box>
+            <Typography sx={{ mr: 1 }}>Xin chào, System Administrator</Typography>
+            <Avatar sx={{ bgcolor: '#1565c0', width: 32, height: 32 }}>
+              <Person />
+            </Avatar>
+            <KeyboardArrowDown sx={{ ml: 0.5, color: 'white' }} />
+          </Box>
+        )}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+          PaperProps={{
+            elevation: 0,
+            sx: {
+              overflow: 'visible',
+              filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+              mt: 1.5,
+            },
+          }}
+        >
+          <MenuItem onClick={handleLogout}>
+            <ListItemIcon>
+              <ExitToApp fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Đăng xuất</ListItemText>
+          </MenuItem>
+        </Menu>
+      </Toolbar>
+    </AppBar>
   );
 };
 
