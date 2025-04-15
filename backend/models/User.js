@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
   username: {
@@ -40,11 +39,8 @@ const UserSchema = new mongoose.Schema({
 // So sánh mật khẩu
 UserSchema.methods.comparePassword = async function(candidatePassword) {
   try {
-    // Check if password is hashed
-    if (this.password.length < 60) { // bcrypt hash always 60 chars
-      return candidatePassword === this.password;
-    }
-    return await bcrypt.compare(candidatePassword, this.password);
+    // Direct password comparison (no hashing)
+    return candidatePassword === this.password;
   } catch (error) {
     return false;
   }

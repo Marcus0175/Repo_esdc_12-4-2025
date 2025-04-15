@@ -10,6 +10,8 @@ import CustomerList from './components/customers/CustomerList';
 import CustomerForm from './components/customers/CustomerForm';
 import TrainerList from './components/trainers/TrainerList';
 import TrainerForm from './components/trainers/TrainerForm';
+import StaffList from './components/staff/StaffList';
+import StaffForm from './components/staff/StaffForm';
 import PrivateRoute from './components/common/PrivateRoute';
 import AuthContext from './contexts/auth/authContext';
 
@@ -104,6 +106,35 @@ const AppContent = () => {
           element={
             <PrivateRoute
               component={TrainerForm}
+              roles={['admin']}
+            />
+          }
+        />
+        
+        {/* Staff Management Routes */}
+        <Route
+          path="/staff"
+          element={
+            <PrivateRoute
+              component={StaffList}
+              roles={['admin']}
+            />
+          }
+        />
+        <Route
+          path="/staff/add"
+          element={
+            <PrivateRoute
+              component={StaffForm}
+              roles={['admin']}
+            />
+          }
+        />
+        <Route
+          path="/staff/edit/:id"
+          element={
+            <PrivateRoute
+              component={StaffForm}
               roles={['admin']}
             />
           }

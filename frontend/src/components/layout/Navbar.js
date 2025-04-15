@@ -34,8 +34,14 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    // Trước tiên đóng menu
+    handleMenuClose();
+    
+    // Gọi hàm logout với callback để chuyển hướng sau khi state đã cập nhật
+    logout(() => {
+      // Chuyển hướng đến trang đăng nhập sau khi đã logout
+      navigate('/login', { replace: true });
+    });
   };
 
   return (
@@ -59,7 +65,7 @@ const Navbar = () => {
             }}
             onClick={handleMenuOpen}
           >
-            <Typography sx={{ mr: 1 }}>Xin chào, System Administrator</Typography>
+            <Typography sx={{ mr: 1 }}>Xin chào, {user.fullName || 'System Administrator'}</Typography>
             <Avatar sx={{ bgcolor: '#1565c0', width: 32, height: 32 }}>
               <Person />
             </Avatar>

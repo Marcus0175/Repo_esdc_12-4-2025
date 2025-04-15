@@ -44,6 +44,7 @@ const StaffList = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [actionType, setActionType] = useState('');
+  const [processingAction, setProcessingAction] = useState(false);
 
   useEffect(() => {
     getStaffList();
@@ -51,10 +52,11 @@ const StaffList = () => {
 
   const getStaffList = async () => {
     try {
-      const res = await api.get('/users/staff');
+      const res = await api.get('/staff');
       setStaff(res.data);
       setLoading(false);
     } catch (err) {
+      console.error('Error fetching staff:', err);
       setAlert('Không thể tải danh sách nhân viên', 'error');
       setLoading(false);
     }
@@ -74,26 +76,33 @@ const StaffList = () => {
 
   const handleConfirmAction = async () => {
     try {
+      setProcessingAction(true);
+      
       if (actionType === 'activate') {
-        await api.put(`/users/staff/${selectedStaff._id}/activate`);
+        await api.put(`/staff/${selectedStaff._id}/activate`);
         setAlert('Kích hoạt tài khoản thành công', 'success');
       } else if (actionType === 'deactivate') {
-        await api.put(`/users/staff/${selectedStaff._id}/deactivate`);
+        await api.put(`/staff/${selectedStaff._id}/deactivate`);
         setAlert('Vô hiệu hóa tài khoản thành công', 'success');
       }
+      
       handleCloseDialog();
-      getStaffList();
+      getStaffList(); // Refresh the list
     } catch (err) {
-      setAlert(err.response?.data?.message || 'Có lỗi xảy ra', 'error');
-      handleCloseDialog();
+      const errorMsg = err.response?.data?.message || 'Có lỗi xảy ra';
+      setAlert(errorMsg, 'error');
+    } finally {
+      setProcessingAction(false);
     }
   };
 
   const filteredStaff = staff.filter(member => {
+    const searchText = searchTerm.toLowerCase();
     return (
-      member.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.username?.toLowerCase().includes(searchTerm.toLowerCase())
+      member.fullName?.toLowerCase().includes(searchText) ||
+      member.email?.toLowerCase().includes(searchText) ||
+      member.username?.toLowerCase().includes(searchText) ||
+      member.phoneNumber?.includes(searchText)
     );
   });
 
@@ -106,7 +115,7 @@ const StaffList = () => {
   }
 
   return (
-    <Box sx={{ ml: '280px', p: 4 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4" component="h2">
@@ -126,7 +135,7 @@ const StaffList = () => {
         <TextField
           fullWidth
           margin="normal"
-          placeholder="Tìm kiếm theo tên, email hoặc tên đăng nhập..."
+          placeholder="Tìm kiếm theo tên, email, tên đăng nhập hoặc số điện thoại..."
           variant="outlined"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -139,73 +148,84 @@ const StaffList = () => {
           }}
         />
 
-        <TableContainer sx={{ mt: 3 }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Họ và tên</TableCell>
-                <TableCell>Tên đăng nhập</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Vai trò</TableCell>
-                <TableCell>Trạng thái</TableCell>
-                <TableCell>Thao tác</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredStaff.map((member) => (
-                <TableRow key={member._id}>
-                  <TableCell>{member.fullName}</TableCell>
-                  <TableCell>{member.username}</TableCell>
-                  <TableCell>{member.email}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={member.role === 'admin' ? 'Quản trị viên' : 'Lễ tân'}
-                      color={member.role === 'admin' ? 'primary' : 'secondary'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={member.active ? 'Đang hoạt động' : 'Đã vô hiệu'}
-                      color={member.active ? 'success' : 'error'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {member.role !== 'admin' && (
-                      <IconButton
-                        color="primary"
-                        component={Link}
-                        to={`/staff/edit/${member._id}`}
-                      >
-                        <Edit />
-                      </IconButton>
-                    )}
-                    {member.active ? (
-                      <Tooltip title="Vô hiệu hóa">
-                        <IconButton
-                          color="error"
-                          onClick={() => handleOpenDialog(member, 'deactivate')}
-                        >
-                          <Block />
-                        </IconButton>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip title="Kích hoạt">
-                        <IconButton
-                          color="success"
-                          onClick={() => handleOpenDialog(member, 'activate')}
-                        >
-                          <CheckCircle />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </TableCell>
+        {filteredStaff.length === 0 ? (
+          <Typography variant="body1" sx={{ mt: 2, textAlign: 'center' }}>
+            {searchTerm ? 'Không tìm thấy nhân viên nào phù hợp' : 'Chưa có nhân viên nào'}
+          </Typography>
+        ) : (
+          <TableContainer sx={{ mt: 3 }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Họ và tên</TableCell>
+                  <TableCell>Tên đăng nhập</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Số điện thoại</TableCell>
+                  <TableCell>Vai trò</TableCell>
+                  <TableCell>Trạng thái</TableCell>
+                  <TableCell>Thao tác</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {filteredStaff.map((member) => (
+                  <TableRow key={member._id}>
+                    <TableCell>{member.fullName}</TableCell>
+                    <TableCell>{member.username}</TableCell>
+                    <TableCell>{member.email}</TableCell>
+                    <TableCell>{member.phoneNumber}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={member.role === 'admin' ? 'Quản trị viên' : 'Lễ tân'}
+                        color={member.role === 'admin' ? 'primary' : 'secondary'}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={member.active ? 'Đang hoạt động' : 'Đã vô hiệu'}
+                        color={member.active ? 'success' : 'error'}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {/* Don't allow editing the main admin account */}
+                      {(member.role !== 'admin' || member.username !== 'admin') && (
+                        <>
+                          <IconButton
+                            color="primary"
+                            component={Link}
+                            to={`/staff/edit/${member._id}`}
+                          >
+                            <Edit />
+                          </IconButton>
+                          {member.active ? (
+                            <Tooltip title="Vô hiệu hóa">
+                              <IconButton
+                                color="error"
+                                onClick={() => handleOpenDialog(member, 'deactivate')}
+                              >
+                                <Block />
+                              </IconButton>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip title="Kích hoạt">
+                              <IconButton
+                                color="success"
+                                onClick={() => handleOpenDialog(member, 'activate')}
+                              >
+                                <CheckCircle />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Paper>
 
       <Dialog
@@ -221,13 +241,27 @@ const StaffList = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Hủy</Button>
-          <Button onClick={handleConfirmAction} color="primary" autoFocus>
-            Xác nhận
+          <Button 
+            onClick={handleCloseDialog}
+            disabled={processingAction}
+          >
+            Hủy
+          </Button>
+          <Button 
+            onClick={handleConfirmAction} 
+            color="primary" 
+            variant="contained"
+            disabled={processingAction}
+          >
+            {processingAction ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Xác nhận'
+            )}
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Container>
   );
 };
 

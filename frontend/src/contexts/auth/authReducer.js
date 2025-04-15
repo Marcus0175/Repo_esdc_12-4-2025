@@ -30,7 +30,7 @@ const authReducer = (state, action) => {
     case AUTH_ERROR:
     case LOGIN_FAIL:
     case LOGOUT:
-      localStorage.removeItem('token');
+      // Không xóa token ở đây nữa - việc này đã được xử lý ở AuthState.js
       return {
         ...state,
         token: null,

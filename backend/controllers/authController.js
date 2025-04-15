@@ -25,7 +25,7 @@ exports.register = async (req, res) => {
     }
     
     // Kiểm tra quyền đăng ký
-    if (req.user.role === 'receptionist' && (role === 'admin' || role === 'receptionist')) {
+    if (req.user && req.user.role === 'receptionist' && (role === 'admin' || role === 'receptionist')) {
       return res.status(403).json({ 
         message: 'Lễ tân không thể đăng ký tài khoản cho nhân viên' 
       });
@@ -34,7 +34,7 @@ exports.register = async (req, res) => {
     // Tạo user mới
     user = new User({
       username,
-      password,
+      password, // Store password as-is (no hashing)
       email,
       fullName,
       phoneNumber,

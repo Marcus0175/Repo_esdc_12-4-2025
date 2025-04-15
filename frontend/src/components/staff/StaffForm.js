@@ -3,23 +3,22 @@ import { useNavigate, useParams } from 'react-router-dom';
 import AlertContext from '../../contexts/alert/alertContext';
 import api from '../../utils/api';
 import {
-  Box,
+  Container,
   Paper,
   Typography,
   TextField,
   Button,
   Grid,
+  Box,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Avatar,
-  IconButton,
-  Card,
-  CardContent,
-  Divider
+  Divider,
+  CircularProgress,
+  IconButton
 } from '@mui/material';
-import { ArrowBack, PhotoCamera, Delete } from '@mui/icons-material';
+import { ArrowBack, Save } from '@mui/icons-material';
 
 const StaffForm = () => {
   const { id } = useParams();
@@ -29,7 +28,7 @@ const StaffForm = () => {
   const isEditMode = Boolean(id);
 
   const [loading, setLoading] = useState(isEditMode);
-  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -38,39 +37,37 @@ const StaffForm = () => {
     fullName: '',
     phoneNumber: '',
     role: 'receptionist',
-    avatar: null
   });
 
   useEffect(() => {
     if (isEditMode) {
-      loadStaffData();
-    }
-  }, [id]);
+      const fetchStaffData = async () => {
+        try {
+          const res = await api.get(`/staff/${id}`);
+          const userData = res.data;
+          
+          setFormData({
+            username: userData.username,
+            email: userData.email,
+            fullName: userData.fullName,
+            phoneNumber: userData.phoneNumber,
+            role: userData.role,
+            password: '',
+            password2: ''
+          });
+          
+          setLoading(false);
+        } catch (err) {
+          setAlert('Không thể tải thông tin nhân viên', 'error');
+          navigate('/staff');
+        }
+      };
 
-  const loadStaffData = async () => {
-    try {
-      const res = await api.get(`/users/staff/${id}`);
-      const { username, email, fullName, phoneNumber, role, avatarUrl } = res.data;
-      setFormData({
-        username,
-        email,
-        fullName,
-        phoneNumber,
-        role,
-        password: '',
-        password2: ''
-      });
-      if (avatarUrl) {
-        setAvatarPreview(avatarUrl);
-      }
-      setLoading(false);
-    } catch (err) {
-      setAlert('Không thể tải thông tin nhân viên', 'error');
-      navigate('/staff');
+      fetchStaffData();
     }
-  };
+  }, [id, isEditMode, navigate, setAlert]);
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -78,82 +75,77 @@ const StaffForm = () => {
     }));
   };
 
-  const handleAvatarChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setAlert('Kích thước ảnh không được vượt quá 5MB', 'error');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result);
-        setFormData(prev => ({
-          ...prev,
-          avatar: file
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveAvatar = () => {
-    setAvatarPreview(null);
-    setFormData(prev => ({
-      ...prev,
-      avatar: null
-    }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     
-    // Validation
-    if (formData.role === 'admin') {
-      if (!formData.username || !formData.password || !formData.fullName) {
-        setAlert('Vui lòng điền đầy đủ thông tin bắt buộc', 'error');
-        return;
-      }
-    } else {
-      if (!formData.username || !formData.password || !formData.email || !formData.fullName || !formData.phoneNumber) {
-        setAlert('Vui lòng điền đầy đủ thông tin bắt buộc', 'error');
-        return;
-      }
-    }
-
+    // Form validation
     if (!isEditMode && formData.password !== formData.password2) {
       setAlert('Mật khẩu xác nhận không khớp', 'error');
+      setSubmitting(false);
+      return;
+    }
+
+    if (!formData.username || (!isEditMode && !formData.password) || !formData.email || !formData.fullName || !formData.phoneNumber) {
+      setAlert('Vui lòng điền đầy đủ thông tin', 'error');
+      setSubmitting(false);
       return;
     }
 
     try {
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== null && key !== 'password2') {
-          formDataToSend.append(key, formData[key]);
-        }
-      });
-
       if (isEditMode) {
-        await api.put(`/users/staff/${id}`, formDataToSend);
+        // Only send necessary data for update
+        const updateData = {
+          email: formData.email,
+          fullName: formData.fullName,
+          phoneNumber: formData.phoneNumber
+        };
+        
+        // Only include password if it's provided
+        if (formData.password) {
+          updateData.password = formData.password;
+        }
+        
+        await api.put(`/staff/${id}`, updateData);
         setAlert('Cập nhật thông tin nhân viên thành công', 'success');
       } else {
-        await api.post('/users/staff', formDataToSend);
+        // For new staff
+        const newStaffData = {
+          username: formData.username,
+          password: formData.password,
+          email: formData.email,
+          fullName: formData.fullName,
+          phoneNumber: formData.phoneNumber,
+          role: formData.role
+        };
+        
+        await api.post('/staff', newStaffData);
         setAlert('Thêm nhân viên mới thành công', 'success');
       }
+      
+      // Continuing from where we left off in StaffForm.js
       navigate('/staff');
     } catch (err) {
-      setAlert(err.response?.data?.message || 'Có lỗi xảy ra', 'error');
+      console.error('Error:', err);
+      const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra';
+      setAlert(errorMessage, 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>Đang tải...</Box>;
+    return (
+      <Container maxWidth="md" sx={{ mt: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
   }
 
   return (
-    <Box sx={{ ml: '280px', p: 4 }}>
+    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
         <Box display="flex" alignItems="center" mb={3}>
           <IconButton onClick={() => navigate('/staff')} sx={{ mr: 2 }}>
@@ -166,41 +158,6 @@ const StaffForm = () => {
 
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            {/* Ảnh đại diện */}
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Box display="flex" flexDirection="column" alignItems="center">
-                    <Avatar
-                      src={avatarPreview}
-                      sx={{ width: 150, height: 150, mb: 2 }}
-                    />
-                    <Box display="flex" gap={1}>
-                      <Button
-                        variant="contained"
-                        component="label"
-                        startIcon={<PhotoCamera />}
-                      >
-                        Chọn ảnh
-                        <input
-                          type="file"
-                          hidden
-                          accept="image/*"
-                          onChange={handleAvatarChange}
-                        />
-                      </Button>
-                      {avatarPreview && (
-                        <IconButton color="error" onClick={handleRemoveAvatar}>
-                          <Delete />
-                        </IconButton>
-                      )}
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Thông tin cơ bản */}
             <Grid item xs={12}>
               <Typography variant="h6">Thông tin cơ bản</Typography>
               <Divider sx={{ my: 2 }} />
@@ -208,12 +165,13 @@ const StaffForm = () => {
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>Vai trò</InputLabel>
+                <InputLabel id="role-label">Vai trò</InputLabel>
                 <Select
+                  labelId="role-label"
                   name="role"
                   value={formData.role}
                   label="Vai trò"
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   disabled={isEditMode}
                 >
                   <MenuItem value="admin">Quản trị viên</MenuItem>
@@ -225,10 +183,49 @@ const StaffForm = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
+                label="Họ và tên"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Số điện thoại"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="h6">Thông tin đăng nhập</Typography>
+              <Divider sx={{ my: 2 }} />
+            </Grid>
+
+            <Grid item xs={12} md={12}>
+              <TextField
+                fullWidth
                 label="Tên đăng nhập"
                 name="username"
                 value={formData.username}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 required
                 disabled={isEditMode}
               />
@@ -237,72 +234,33 @@ const StaffForm = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Mật khẩu"
+                label={isEditMode ? "Mật khẩu mới (để trống nếu không đổi)" : "Mật khẩu"}
                 name="password"
                 type="password"
                 value={formData.password}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 required={!isEditMode}
               />
             </Grid>
 
-            {!isEditMode && (
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Xác nhận mật khẩu"
-                  name="password2"
-                  type="password"
-                  value={formData.password2}
-                  onChange={handleInputChange}
-                  required
-                />
-              </Grid>
-            )}
-
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Họ và tên"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                required
+                label="Xác nhận mật khẩu"
+                name="password2"
+                type="password"
+                value={formData.password2}
+                onChange={handleChange}
+                required={!isEditMode || formData.password !== ''}
               />
             </Grid>
-
-            {formData.role === 'receptionist' && (
-              <>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Số điện thoại"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Grid>
-              </>
-            )}
           </Grid>
 
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
             <Button
               variant="outlined"
               onClick={() => navigate('/staff')}
+              disabled={submitting}
             >
               Hủy
             </Button>
@@ -310,13 +268,19 @@ const StaffForm = () => {
               type="submit"
               variant="contained"
               color="primary"
+              startIcon={<Save />}
+              disabled={submitting}
             >
-              {isEditMode ? 'Cập nhật' : 'Thêm mới'}
+              {submitting ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                isEditMode ? 'Cập nhật' : 'Thêm mới'
+              )}
             </Button>
           </Box>
         </form>
       </Paper>
-    </Box>
+    </Container>
   );
 };
 

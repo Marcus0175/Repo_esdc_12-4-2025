@@ -66,9 +66,48 @@ const AuthState = props => {
     }
   };
 
-  // Logout
-  const logout = () => {
+  // Register new user
+  const register = async formData => {
+    try {
+      const res = await api.post('/auth/register', formData);
+      
+      dispatch({
+        type: REGISTER_SUCCESS,
+        payload: res.data
+      });
+
+      // Set token to localStorage and axios headers
+      if (res.data.token) {
+        localStorage.setItem('token', res.data.token);
+        setAuthToken(res.data.token);
+      }
+
+      // Load user info after successful registration
+      await loadUser();
+    } catch (err) {
+      dispatch({
+        type: REGISTER_FAIL,
+        payload: err.response?.data?.message || 'Đăng ký thất bại'
+      });
+      throw err; // Rethrow để component có thể catch và xử lý
+    }
+  };
+
+  // Logout - với callback để xử lý chuyển hướng
+  const logout = (callback) => {
+    // Xóa token khỏi headers
+    setAuthToken(null);
+    
+    // Xóa token khỏi localStorage
+    localStorage.removeItem('token');
+    
+    // Cập nhật state
     dispatch({ type: LOGOUT });
+    
+    // Gọi callback sau khi state đã được cập nhật
+    if (callback && typeof callback === 'function') {
+      callback();
+    }
   };
 
   // Clear Errors
@@ -84,6 +123,7 @@ const AuthState = props => {
         loading: state.loading,
         user: state.user,
         error: state.error,
+        register,
         login,
         logout,
         loadUser,

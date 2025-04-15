@@ -31,6 +31,9 @@ const Dashboard = () => {
   const authContext = useContext(AuthContext);
   const { user } = authContext;
 
+  // Check if the user is admin or receptionist
+  const showSidebar = user && (user.role === 'admin' || user.role === 'receptionist');
+
   const Sidebar = () => (
     <Box
       sx={{
@@ -143,8 +146,6 @@ const Dashboard = () => {
 
   const renderAdminDashboard = () => (
     <Grid container spacing={4}>
-      
-
       <Grid item xs={12} md={4}>
         <Paper
           sx={{
@@ -252,21 +253,188 @@ const Dashboard = () => {
     </Grid>
   );
 
+  const renderCustomerDashboard = () => (
+    <Grid container spacing={4}>
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #43a047 0%, #81c784 100%)',
+            color: 'white'
+          }}
+        >
+          <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Huấn luyện viên
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Xem danh sách huấn luyện viên và đặt lịch tập luyện
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/trainers"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem danh sách
+          </Button>
+        </Paper>
+      </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
+            color: 'white'
+          }}
+        >
+          <Person sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Tài khoản của tôi
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Xem và cập nhật thông tin tài khoản của bạn
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/profile"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem thông tin
+          </Button>
+        </Paper>
+      </Grid>
+    </Grid>
+  );
+
+  const renderTrainerDashboard = () => (
+    <Grid container spacing={4}>
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
+            color: 'white'
+          }}
+        >
+          <People sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Khách hàng của tôi
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Xem danh sách khách hàng được gán cho bạn
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/my-customers"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem danh sách
+          </Button>
+        </Paper>
+      </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #43a047 0%, #81c784 100%)',
+            color: 'white'
+          }}
+        >
+          <Person sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Tài khoản của tôi
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Xem và cập nhật thông tin tài khoản của bạn
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/profile"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem thông tin
+          </Button>
+        </Paper>
+      </Grid>
+    </Grid>
+  );
+
+  // Render appropriate dashboard based on user role
+  const renderDashboardContent = () => {
+    if (!user) return null;
+
+    switch (user.role) {
+      case 'admin':
+      case 'receptionist':
+        return renderAdminDashboard();
+      case 'customer':
+        return renderCustomerDashboard();
+      case 'trainer':
+        return renderTrainerDashboard();
+      default:
+        return null;
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex' }}>
-      <Sidebar />
+      {/* Only show sidebar for admin and receptionist */}
+      {showSidebar && <Sidebar />}
+      
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: 4,
-          ml: `${SIDEBAR_WIDTH}px`,
+          ml: showSidebar ? `${SIDEBAR_WIDTH}px` : 0,
           mt: '64px', // Height of AppBar
           backgroundColor: theme.palette.background.default,
           minHeight: '100vh'
         }}
       >
-        {user && user.role === 'admin' && renderAdminDashboard()}
+        {renderDashboardContent()}
       </Box>
     </Box>
   );
