@@ -21,7 +21,10 @@ import {
   Dashboard as DashboardIcon,
   People,
   PersonAdd,
-  List as ListIcon
+  List as ListIcon,
+  Build,
+  Schedule,
+  Handyman
 } from '@mui/icons-material';
 
 const SIDEBAR_WIDTH = 280;
@@ -33,6 +36,7 @@ const Dashboard = () => {
 
   // Check if the user is admin or receptionist
   const showSidebar = user && (user.role === 'admin' || user.role === 'receptionist');
+  const isAdmin = user && user.role === 'admin';
 
   const Sidebar = () => (
     <Box
@@ -114,7 +118,52 @@ const Dashboard = () => {
           <ListItemText primary="Thêm huấn luyện viên mới" />
         </ListItemButton>
 
-        {user && user.role === 'admin' && (
+        {(isAdmin || user?.role === 'receptionist') && (
+          <>
+            <Box sx={{ p: 2, pt: 3 }}>
+              <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                QUẢN LÝ CƠ SỞ VẬT CHẤT
+              </Typography>
+            </Box>
+            
+            <ListItemButton 
+              component={Link} 
+              to="/equipment"
+              selected={window.location.pathname === '/equipment'}
+            >
+              <ListItemIcon>
+                <Handyman />
+              </ListItemIcon>
+              <ListItemText primary="Danh sách thiết bị" />
+            </ListItemButton>
+            
+            {isAdmin && (
+              <ListItemButton 
+                component={Link} 
+                to="/equipment/add"
+                selected={window.location.pathname === '/equipment/add'}
+              >
+                <ListItemIcon>
+                  <Build />
+                </ListItemIcon>
+                <ListItemText primary="Thêm thiết bị mới" />
+              </ListItemButton>
+            )}
+            
+            <ListItemButton 
+              component={Link} 
+              to="/maintenance"
+              selected={window.location.pathname === '/maintenance'}
+            >
+              <ListItemIcon>
+                <Schedule />
+              </ListItemIcon>
+              <ListItemText primary="Lịch bảo trì" />
+            </ListItemButton>
+          </>
+        )}
+
+        {isAdmin && (
           <>
             <Box sx={{ p: 2, pt: 3 }}>
               <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
@@ -256,6 +305,76 @@ const Dashboard = () => {
           )}
         </Paper>
       </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #7b1fa2 0%, #ba68c8 100%)',
+            color: 'white'
+          }}
+        >
+          <Build sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Quản lý thiết bị
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Quản lý và theo dõi tình trạng các thiết bị tập luyện
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/equipment"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem danh sách
+          </Button>
+        </Paper>
+      </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #0288d1 0%, #4fc3f7 100%)',
+            color: 'white'
+          }}
+        >
+          <Schedule sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Quản lý bảo trì
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Theo dõi lịch bảo trì và sửa chữa các thiết bị
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/maintenance"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem lịch bảo trì
+          </Button>
+        </Paper>
+      </Grid>
     </Grid>
   );
 
@@ -327,6 +446,76 @@ const Dashboard = () => {
             }}
           >
             Xem danh sách
+          </Button>
+        </Paper>
+      </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #7b1fa2 0%, #ba68c8 100%)',
+            color: 'white'
+          }}
+        >
+          <Build sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Quản lý thiết bị
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Theo dõi tình trạng các thiết bị tập luyện
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/equipment"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem danh sách
+          </Button>
+        </Paper>
+      </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #0288d1 0%, #4fc3f7 100%)',
+            color: 'white'
+          }}
+        >
+          <Schedule sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Quản lý bảo trì
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Theo dõi lịch bảo trì và sửa chữa các thiết bị
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/maintenance"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem lịch bảo trì
           </Button>
         </Paper>
       </Grid>

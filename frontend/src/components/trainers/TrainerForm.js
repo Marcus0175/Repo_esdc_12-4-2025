@@ -13,11 +13,10 @@ import {
   Divider,
   CircularProgress,
   Chip,
-  FormControl,
-  FormLabel,
-  Autocomplete
+  Autocomplete,
+  Avatar
 } from '@mui/material';
-import { Save, ArrowBack, Add, Delete } from '@mui/icons-material';
+import { Save, ArrowBack, Add, Delete, PhotoCamera } from '@mui/icons-material';
 import ProfileImageUpload from '../common/ProfileImageUpload';
 
 const TrainerForm = () => {
@@ -41,13 +40,15 @@ const TrainerForm = () => {
   });
 
   const [loading, setLoading] = useState(isEditMode);
-  const [newSpecialization, setNewSpecialization] = useState('');
   const [newCertificate, setNewCertificate] = useState({
     name: '',
     issuedBy: '',
     year: ''
   });
   const [profileImage, setProfileImage] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const specializations = [
     'Giảm cân', 'Tăng cơ', 'Cardio', 'Yoga', 'Pilates', 'Strength Training',
@@ -150,31 +151,83 @@ const TrainerForm = () => {
     });
   };
 
-  // Xử lý khi tải lên ảnh thành công
+  // Handle file selection for new trainer
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        setAlert('Vui lòng chọn file hình ảnh (JPEG, PNG, GIF, WebP)', 'error');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setAlert('Kích thước file không được vượt quá 5MB', 'error');
+        return;
+      }
+      
+      setSelectedFile(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Xử lý khi tải lên ảnh thành công (chỉ trong edit mode)
   const handleImageUpload = (imageUrl) => {
     setProfileImage(`http://localhost:5000${imageUrl}`);
   };
 
   const onSubmit = async e => {
     e.preventDefault();
+    setSubmitting(true);
     
     if (!isEditMode && password !== confirmPassword) {
       setAlert('Mật khẩu không khớp', 'error');
+      setSubmitting(false);
       return;
     }
 
     try {
+      let response;
+      
       if (isEditMode) {
-        await api.put(`/users/trainers/${id}`, formData);
+        response = await api.put(`/users/trainers/${id}`, formData);
         setAlert('Cập nhật huấn luyện viên thành công', 'success');
       } else {
-        await api.post('/users/trainers', formData);
+        response = await api.post('/users/trainers', formData);
+        
+        // If we have a file to upload and the trainer was created successfully
+        if (selectedFile && response.data && response.data.trainer && response.data.trainer._id) {
+          const newTrainerId = response.data.trainer._id;
+          
+          // Create form data for file upload
+          const formData = new FormData();
+          formData.append('profileImage', selectedFile);
+          
+          // Upload the image
+          await api.put(`/users/trainers/${newTrainerId}/profile-image`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+        }
+        
         setAlert('Thêm huấn luyện viên thành công', 'success');
       }
+      
       navigate('/trainers');
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Có lỗi xảy ra';
       setAlert(errorMsg, 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -203,14 +256,52 @@ const TrainerForm = () => {
           </Typography>
         </Box>
 
-        {/* Phần tải lên ảnh đại diện (chỉ hiển thị khi đang chỉnh sửa) */}
-        {isEditMode && (
+        {/* Phần tải lên ảnh đại diện */}
+        {isEditMode ? (
+          // Use existing ProfileImageUpload component for edit mode
           <ProfileImageUpload
             userId={id}
             userType="trainer"
             currentImage={profileImage}
             onImageUpload={handleImageUpload}
           />
+        ) : (
+          // Simple image selection for new trainer
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Ảnh đại diện
+            </Typography>
+            
+            <Box display="flex" flexDirection="column" alignItems="center">
+              <Avatar
+                src={imagePreview}
+                alt="Ảnh đại diện"
+                sx={{ width: 150, height: 150, mb: 2, border: '1px solid #ccc' }}
+              />
+              
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<PhotoCamera />}
+                sx={{ mb: 2 }}
+                disabled={submitting}
+              >
+                Chọn ảnh
+                <input
+                  type="file"
+                  hidden
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleFileChange}
+                />
+              </Button>
+              
+              {selectedFile && (
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Đã chọn: {selectedFile.name}
+                </Typography>
+              )}
+            </Box>
+          </Paper>
         )}
 
         <form onSubmit={onSubmit}>
@@ -459,8 +550,13 @@ const TrainerForm = () => {
                   color="primary"
                   startIcon={<Save />}
                   size="large"
+                  disabled={submitting}
                 >
-                  {isEditMode ? 'Cập nhật' : 'Thêm mới'}
+                  {submitting ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    isEditMode ? 'Cập nhật' : 'Thêm mới'
+                  )}
                 </Button>
               </Box>
             </Grid>
@@ -471,4 +567,4 @@ const TrainerForm = () => {
   );
 };
 
-export default TrainerForm;
+export default TrainerForm; 

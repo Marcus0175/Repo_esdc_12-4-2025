@@ -16,9 +16,10 @@ import {
   MenuItem,
   Divider,
   CircularProgress,
-  IconButton
+  IconButton,
+  Avatar
 } from '@mui/material';
-import { ArrowBack, Save } from '@mui/icons-material';
+import { ArrowBack, Save, PhotoCamera } from '@mui/icons-material';
 import ProfileImageUpload from '../common/ProfileImageUpload';
 
 const StaffForm = () => {
@@ -31,6 +32,8 @@ const StaffForm = () => {
   const [loading, setLoading] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -82,7 +85,35 @@ const StaffForm = () => {
     }));
   };
 
-  // Xử lý khi tải lên ảnh thành công
+  // Handle file selection for new staff
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        setAlert('Vui lòng chọn file hình ảnh (JPEG, PNG, GIF, WebP)', 'error');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setAlert('Kích thước file không được vượt quá 5MB', 'error');
+        return;
+      }
+      
+      setSelectedFile(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Xử lý khi tải lên ảnh thành công (chỉ trong edit mode)
   const handleImageUpload = (imageUrl) => {
     setProfileImage(`http://localhost:5000${imageUrl}`);
   };
@@ -105,6 +136,8 @@ const StaffForm = () => {
     }
 
     try {
+      let response;
+      
       if (isEditMode) {
         // Only send necessary data for update
         const updateData = {
@@ -118,7 +151,7 @@ const StaffForm = () => {
           updateData.password = formData.password;
         }
         
-        await api.put(`/staff/${id}`, updateData);
+        response = await api.put(`/staff/${id}`, updateData);
         setAlert('Cập nhật thông tin nhân viên thành công', 'success');
       } else {
         // For new staff
@@ -131,7 +164,24 @@ const StaffForm = () => {
           role: formData.role
         };
         
-        await api.post('/staff', newStaffData);
+        response = await api.post('/staff', newStaffData);
+        
+        // If we have a file to upload and the staff was created successfully
+        if (selectedFile && response.data && response.data.staff && response.data.staff.id) {
+          const newStaffId = response.data.staff.id;
+          
+          // Create form data for file upload
+          const formData = new FormData();
+          formData.append('profileImage', selectedFile);
+          
+          // Upload the image
+          await api.put(`/staff/${newStaffId}/profile-image`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+        }
+        
         setAlert('Thêm nhân viên mới thành công', 'success');
       }
       
@@ -167,14 +217,52 @@ const StaffForm = () => {
           </Typography>
         </Box>
 
-        {/* Phần tải lên ảnh đại diện (chỉ hiển thị khi đang chỉnh sửa) */}
-        {isEditMode && (
+        {/* Phần tải lên ảnh đại diện */}
+        {isEditMode ? (
+          // Use existing ProfileImageUpload component for edit mode
           <ProfileImageUpload
             userId={id}
             userType="staff"
             currentImage={profileImage}
             onImageUpload={handleImageUpload}
           />
+        ) : (
+          // Simple image selection for new staff
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Ảnh đại diện
+            </Typography>
+            
+            <Box display="flex" flexDirection="column" alignItems="center">
+              <Avatar
+                src={imagePreview}
+                alt="Ảnh đại diện"
+                sx={{ width: 150, height: 150, mb: 2, border: '1px solid #ccc' }}
+              />
+              
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<PhotoCamera />}
+                sx={{ mb: 2 }}
+                disabled={submitting}
+              >
+                Chọn ảnh
+                <input
+                  type="file"
+                  hidden
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleFileChange}
+                />
+              </Button>
+              
+              {selectedFile && (
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Đã chọn: {selectedFile.name}
+                </Typography>
+              )}
+            </Box>
+          </Paper>
         )}
 
         <form onSubmit={handleSubmit}>

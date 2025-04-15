@@ -12,11 +12,17 @@ import TrainerList from './components/trainers/TrainerList';
 import TrainerForm from './components/trainers/TrainerForm';
 import StaffList from './components/staff/StaffList';
 import StaffForm from './components/staff/StaffForm';
+import EquipmentList from './components/equipment/EquipmentList';
+import EquipmentForm from './components/equipment/EquipmentForm';
+import EquipmentDetail from './components/equipment/EquipmentDetail';
+import MaintenanceList from './components/maintenance/MaintenanceList';
+import MaintenanceForm from './components/maintenance/MaintenanceForm';
 import PrivateRoute from './components/common/PrivateRoute';
 import AuthContext from './contexts/auth/authContext';
 
 import AuthState from './contexts/auth/AuthState';
 import AlertState from './contexts/alert/AlertState';
+import EquipmentState from './contexts/equipment/EquipmentState';
 
 const AppContent = () => {
   const authContext = useContext(AuthContext);
@@ -141,6 +147,82 @@ const AppContent = () => {
             }
           />
           
+          {/* Equipment Management Routes */}
+          <Route
+            path="/equipment"
+            element={
+              <PrivateRoute
+                component={EquipmentList}
+                roles={['admin', 'receptionist']}
+              />
+            }
+          />
+          <Route
+            path="/equipment/add"
+            element={
+              <PrivateRoute
+                component={EquipmentForm}
+                roles={['admin']}
+              />
+            }
+          />
+          <Route
+            path="/equipment/edit/:id"
+            element={
+              <PrivateRoute
+                component={EquipmentForm}
+                roles={['admin']}
+              />
+            }
+          />
+          <Route
+            path="/equipment/:id"
+            element={
+              <PrivateRoute
+                component={EquipmentDetail}
+                roles={['admin', 'receptionist']}
+              />
+            }
+          />
+          
+          {/* Maintenance Management Routes */}
+          <Route
+            path="/maintenance"
+            element={
+              <PrivateRoute
+                component={MaintenanceList}
+                roles={['admin', 'receptionist']}
+              />
+            }
+          />
+          <Route
+            path="/maintenance/add"
+            element={
+              <PrivateRoute
+                component={MaintenanceForm}
+                roles={['admin']}
+              />
+            }
+          />
+          <Route
+            path="/maintenance/add/:id"
+            element={
+              <PrivateRoute
+                component={MaintenanceForm}
+                roles={['admin']}
+              />
+            }
+          />
+          <Route
+            path="/maintenance/:maintenanceId"
+            element={
+              <PrivateRoute
+                component={MaintenanceForm}
+                roles={['admin', 'receptionist']}
+              />
+            }
+          />
+          
           {/* Redirect */}
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
@@ -165,12 +247,14 @@ const App = () => {
   return (
     <AuthState>
       <AlertState>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <Router>
-            <AppContent />
-          </Router>
-        </ThemeProvider>
+        <EquipmentState>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Router>
+              <AppContent />
+            </Router>
+          </ThemeProvider>
+        </EquipmentState>
       </AlertState>
     </AuthState>
   );
