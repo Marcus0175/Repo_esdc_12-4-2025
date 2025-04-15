@@ -21,26 +21,20 @@ import {
   TablePagination,
   IconButton,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  CircularProgress,
   MenuItem,
   Select,
   FormControl,
   InputLabel,
   Menu,
   Tabs,
-  Tab
+  Tab,
+  CircularProgress
 } from '@mui/material';
 import {
   Add,
   Search,
   FilterList,
   Edit,
-  Delete,
   CheckCircle,
   Warning,
   ArrowDropDown,
@@ -79,7 +73,6 @@ const MaintenanceList = () => {
     getMaintenance,
     getUpcomingMaintenance,
     getOverdueMaintenance,
-    deleteMaintenance,
     updateMaintenance
   } = equipmentContext;
   
@@ -93,12 +86,6 @@ const MaintenanceList = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [tabValue, setTabValue] = useState(0);
-  const [confirmDialog, setConfirmDialog] = useState({
-    open: false,
-    id: null,
-    title: '',
-    content: ''
-  });
 
   // Check if user is admin
   const isAdmin = user && user.role === 'admin';
@@ -139,39 +126,6 @@ const MaintenanceList = () => {
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
-
-  const openDeleteDialog = (id, equipmentName) => {
-    setConfirmDialog({
-      open: true,
-      id,
-      title: 'Xác nhận xóa lịch bảo trì',
-      content: `Bạn có chắc chắn muốn xóa lịch bảo trì cho thiết bị "${equipmentName}" không? Hành động này không thể hoàn tác.`
-    });
-  };
-
-  const closeDeleteDialog = () => {
-    setConfirmDialog({
-      open: false,
-      id: null,
-      title: '',
-      content: ''
-    });
-  };
-
-  const confirmDelete = async () => {
-    try {
-      await deleteMaintenance(confirmDialog.id);
-      setAlert('Đã xóa lịch bảo trì thành công', 'success');
-      
-      // Refresh all maintenance lists
-      getMaintenance();
-      getUpcomingMaintenance();
-      getOverdueMaintenance();
-    } catch (err) {
-      setAlert('Lỗi khi xóa lịch bảo trì', 'error');
-    }
-    closeDeleteDialog();
   };
 
   // Helper function to mark maintenance as completed
@@ -440,7 +394,6 @@ const MaintenanceList = () => {
           <MaintenanceTable 
             data={paginatedData}
             isAdmin={isAdmin}
-            openDeleteDialog={openDeleteDialog}
             markAsCompleted={markAsCompleted}
             formatDate={formatDate}
             formatCurrency={formatCurrency}
@@ -453,7 +406,6 @@ const MaintenanceList = () => {
           <MaintenanceTable 
             data={paginatedData}
             isAdmin={isAdmin}
-            openDeleteDialog={openDeleteDialog}
             markAsCompleted={markAsCompleted}
             formatDate={formatDate}
             formatCurrency={formatCurrency}
@@ -466,7 +418,6 @@ const MaintenanceList = () => {
           <MaintenanceTable 
             data={paginatedData}
             isAdmin={isAdmin}
-            openDeleteDialog={openDeleteDialog}
             markAsCompleted={markAsCompleted}
             formatDate={formatDate}
             formatCurrency={formatCurrency}
@@ -487,27 +438,6 @@ const MaintenanceList = () => {
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} của ${count}`}
         />
       </Paper>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={confirmDialog.open}
-        onClose={closeDeleteDialog}
-      >
-        <DialogTitle>{confirmDialog.title}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {confirmDialog.content}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteDialog} color="primary">
-            Hủy
-          </Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Xóa
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Container>
   );
 };
@@ -516,7 +446,6 @@ const MaintenanceList = () => {
 const MaintenanceTable = ({ 
   data, 
   isAdmin, 
-  openDeleteDialog, 
   markAsCompleted, 
   formatDate, 
   formatCurrency, 
@@ -579,16 +508,7 @@ const MaintenanceTable = ({
                       <Edit />
                     </IconButton>
                     
-                    {isAdmin && (
-                      <IconButton 
-                        color="error" 
-                        size="small" 
-                        onClick={() => openDeleteDialog(item._id, item.equipment?.name)}
-                        title="Xóa lịch bảo trì"
-                      >
-                        <Delete />
-                      </IconButton>
-                    )}
+                    {/* Đã loại bỏ nút Delete ở đây */}
                     
                     {isAdmin && ['scheduled', 'in-progress'].includes(item.status) && (
                       <IconButton 

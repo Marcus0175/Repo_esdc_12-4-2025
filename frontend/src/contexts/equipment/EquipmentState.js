@@ -162,24 +162,7 @@ const EquipmentState = props => {
     }
   };
 
-  // Delete equipment
-  const deleteEquipment = async (id) => {
-    setLoading();
-    
-    try {
-      await api.delete(`/equipment/${id}`);
-      
-      dispatch({
-        type: DELETE_EQUIPMENT,
-        payload: id
-      });
-    } catch (err) {
-      dispatch({
-        type: EQUIPMENT_ERROR,
-        payload: err.response?.data?.message || 'Lỗi khi xóa thiết bị'
-      });
-    }
-  };
+  // Đã loại bỏ hàm deleteEquipment ở đây
 
   // Upload equipment image
   const uploadEquipmentImage = async (id, imageFile) => {
@@ -341,24 +324,7 @@ const EquipmentState = props => {
     }
   };
 
-  // Delete maintenance record
-  const deleteMaintenance = async (id) => {
-    setLoading();
-    
-    try {
-      await api.delete(`/maintenance/${id}`);
-      
-      dispatch({
-        type: DELETE_MAINTENANCE,
-        payload: id
-      });
-    } catch (err) {
-      dispatch({
-        type: MAINTENANCE_ERROR,
-        payload: err.response?.data?.message || 'Lỗi khi xóa bản ghi bảo trì'
-      });
-    }
-  };
+  // Đã loại bỏ hàm deleteMaintenance ở đây
 
   // Get upcoming maintenance
   const getUpcomingMaintenance = async () => {
@@ -421,7 +387,7 @@ const EquipmentState = props => {
         addEquipment,
         updateEquipment,
         updateEquipmentStatus,
-        deleteEquipment,
+        // Đã loại bỏ deleteEquipment khỏi context value
         uploadEquipmentImage,
         clearEquipment,
         filterEquipment,
@@ -432,7 +398,7 @@ const EquipmentState = props => {
         getEquipmentMaintenance,
         addMaintenance,
         updateMaintenance,
-        deleteMaintenance,
+        // Đã loại bỏ deleteMaintenance khỏi context value
         getUpcomingMaintenance,
         getOverdueMaintenance,
         clearMaintenance

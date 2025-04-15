@@ -31,7 +31,6 @@ import {
 import {
   ArrowBack,
   Edit,
-  Delete,
   Build,
   CheckCircle,
   Warning,
@@ -66,7 +65,6 @@ const EquipmentDetail = () => {
     loading,
     error,
     getEquipmentById,
-    deleteEquipment,
     updateEquipmentStatus,
     getEquipmentMaintenance,
     clearEquipment
@@ -79,11 +77,6 @@ const EquipmentDetail = () => {
   const navigate = useNavigate();
   
   const [tabValue, setTabValue] = useState(0);
-  const [confirmDialog, setConfirmDialog] = useState({
-    open: false,
-    title: '',
-    content: ''
-  });
   const [statusUpdateDialog, setStatusUpdateDialog] = useState({
     open: false,
     currentStatus: '',
@@ -109,32 +102,6 @@ const EquipmentDetail = () => {
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
-  };
-
-  const handleDeleteClick = () => {
-    setConfirmDialog({
-      open: true,
-      title: 'Xác nhận xóa thiết bị',
-      content: `Bạn có chắc chắn muốn xóa thiết bị "${currentEquipment?.name}" không? Hành động này không thể hoàn tác.`
-    });
-  };
-
-  const handleCloseDeleteDialog = () => {
-    setConfirmDialog({
-      ...confirmDialog,
-      open: false
-    });
-  };
-
-  const confirmDelete = async () => {
-    try {
-      await deleteEquipment(id);
-      setAlert('Thiết bị đã được xóa thành công', 'success');
-      navigate('/equipment');
-    } catch (err) {
-      setAlert('Lỗi khi xóa thiết bị', 'error');
-    }
-    handleCloseDeleteDialog();
   };
 
   const openStatusUpdateDialog = () => {
@@ -294,15 +261,7 @@ const EquipmentDetail = () => {
                 >
                   Chỉnh sửa
                 </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<Delete />}
-                  onClick={handleDeleteClick}
-                  sx={{ mr: 1 }}
-                >
-                  Xóa
-                </Button>
+                {/* Đã loại bỏ nút Delete ở đây */}
               </>
             )}
             {isAdmin && (
@@ -567,27 +526,6 @@ const EquipmentDetail = () => {
           )}
         </TabPanel>
       </Paper>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={confirmDialog.open}
-        onClose={handleCloseDeleteDialog}
-      >
-        <DialogTitle>{confirmDialog.title}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {confirmDialog.content}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteDialog} color="primary">
-            Hủy
-          </Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Xóa
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Status Update Dialog */}
       <Dialog

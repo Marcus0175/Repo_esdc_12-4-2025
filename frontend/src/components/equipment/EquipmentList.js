@@ -38,7 +38,6 @@ import {
   Search,
   FilterList,
   Edit,
-  Delete,
   Build,
   CheckCircle,
   Warning,
@@ -58,7 +57,6 @@ const EquipmentList = () => {
     getEquipment, 
     filterEquipment, 
     clearFilter, 
-    deleteEquipment,
     updateEquipmentStatus
   } = equipmentContext;
   
@@ -71,12 +69,6 @@ const EquipmentList = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [confirmDialog, setConfirmDialog] = useState({
-    open: false,
-    id: null,
-    title: '',
-    content: ''
-  });
   const [statusUpdateDialog, setStatusUpdateDialog] = useState({
     open: false,
     id: null,
@@ -126,30 +118,6 @@ const EquipmentList = () => {
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
-
-  const openDeleteDialog = (id, name) => {
-    setConfirmDialog({
-      open: true,
-      id,
-      title: 'Xác nhận xóa thiết bị',
-      content: `Bạn có chắc chắn muốn xóa thiết bị "${name}" không? Hành động này không thể hoàn tác.`
-    });
-  };
-
-  const closeDeleteDialog = () => {
-    setConfirmDialog({
-      open: false,
-      id: null,
-      title: '',
-      content: ''
-    });
-  };
-
-  const confirmDelete = () => {
-    deleteEquipment(confirmDialog.id);
-    setAlert('Thiết bị đã được xóa thành công', 'success');
-    closeDeleteDialog();
   };
 
   const openStatusUpdateDialog = (id, currentStatus) => {
@@ -398,16 +366,7 @@ const EquipmentList = () => {
                         >
                           <Edit />
                         </IconButton>
-                        {isAdmin && (
-                          <IconButton 
-                            color="error" 
-                            size="small" 
-                            onClick={() => openDeleteDialog(item._id, item.name)}
-                            title="Xóa thiết bị"
-                          >
-                            <Delete />
-                          </IconButton>
-                        )}
+                        {/* Đã loại bỏ nút Delete ở đây */}
                         {isAdmin && (
                           <IconButton 
                             component={Link} 
@@ -448,27 +407,6 @@ const EquipmentList = () => {
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} của ${count}`}
         />
       </Paper>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={confirmDialog.open}
-        onClose={closeDeleteDialog}
-      >
-        <DialogTitle>{confirmDialog.title}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {confirmDialog.content}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteDialog} color="primary">
-            Hủy
-          </Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Xóa
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Status Update Dialog */}
       <Dialog
