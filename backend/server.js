@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const connectDB = require('./config/db');
 const userController = require('./controllers/userController');
 
@@ -21,10 +22,13 @@ app.use(cors({
 // Init Middleware
 app.use(express.json());
 
+// Phục vụ thư mục upload một cách tĩnh
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
-app.use('/api/staff', require('./routes/staff')); // New staff routes
+app.use('/api/staff', require('./routes/staff'));
 
 // Default route
 app.get('/', (req, res) => {

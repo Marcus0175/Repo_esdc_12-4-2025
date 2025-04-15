@@ -24,7 +24,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  CircularProgress
+  CircularProgress,
+  Avatar
 } from '@mui/material';
 import {
   Edit,
@@ -157,6 +158,7 @@ const StaffList = () => {
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell>Ảnh đại diện</TableCell>
                   <TableCell>Họ và tên</TableCell>
                   <TableCell>Tên đăng nhập</TableCell>
                   <TableCell>Email</TableCell>
@@ -169,6 +171,13 @@ const StaffList = () => {
               <TableBody>
                 {filteredStaff.map((member) => (
                   <TableRow key={member._id}>
+                    <TableCell>
+                      <Avatar 
+                        src={member.profileImage ? `http://localhost:5000${member.profileImage}` : ''} 
+                        alt={member.fullName}
+                        sx={{ width: 50, height: 50 }}
+                      />
+                    </TableCell>
                     <TableCell>{member.fullName}</TableCell>
                     <TableCell>{member.username}</TableCell>
                     <TableCell>{member.email}</TableCell>

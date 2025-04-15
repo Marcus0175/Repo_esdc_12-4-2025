@@ -19,14 +19,23 @@ import {
   TextField,
   InputAdornment,
   Chip,
-  Rating
+  Rating,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  CircularProgress,
+  Avatar
 } from '@mui/material';
 import {
   Edit,
   Delete,
   Search,
   Add,
-  Person
+  Person,
+  Block,
+  CheckCircle
 } from '@mui/icons-material';
 
 const TrainerList = () => {
@@ -38,8 +47,13 @@ const TrainerList = () => {
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedTrainer, setSelectedTrainer] = useState(null);
+  const [actionType, setActionType] = useState('');
+  const [processingAction, setProcessingAction] = useState(false);
 
-  const isAdmin = user && user.role === 'admin';
+  // Check if user can manage trainers (admin or receptionist)
+  const canManageTrainers = user && (user.role === 'admin' || user.role === 'receptionist');
   const isCustomer = user && user.role === 'customer';
 
   useEffect(() => {
@@ -57,16 +71,55 @@ const TrainerList = () => {
     }
   };
 
-  const deleteTrainer = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa huấn luyện viên này?')) {
-      try {
-        await api.delete(`/users/trainers/${id}`);
-        setAlert('Xóa huấn luyện viên thành công', 'success');
-        getTrainers();
-      } catch (err) {
-        setAlert('Không thể xóa huấn luyện viên', 'error');
+  const handleOpenDialog = (trainer, action) => {
+    setSelectedTrainer(trainer);
+    setActionType(action);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedTrainer(null);
+    setActionType('');
+  };
+
+  const handleConfirmAction = async () => {
+    try {
+      setProcessingAction(true);
+      
+      if (actionType === 'activate') {
+        await api.put(`/users/trainers/${selectedTrainer._id}/activate`);
+        setAlert('Kích hoạt tài khoản thành công', 'success');
+      } else if (actionType === 'deactivate') {
+        await api.delete(`/users/trainers/${selectedTrainer._id}`);
+        setAlert('Vô hiệu hóa tài khoản thành công', 'success');
       }
+      
+      handleCloseDialog();
+      getTrainers();
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || 'Có lỗi xảy ra';
+      setAlert(errorMsg, 'error');
+    } finally {
+      setProcessingAction(false);
     }
+  };
+
+  const getDialogContent = () => {
+    if (!selectedTrainer) return {};
+
+    const contents = {
+      activate: {
+        title: 'Xác nhận kích hoạt tài khoản',
+        content: `Bạn có chắc chắn muốn kích hoạt tài khoản của huấn luyện viên ${selectedTrainer.user?.fullName}?`
+      },
+      deactivate: {
+        title: 'Xác nhận vô hiệu hóa tài khoản',
+        content: `Bạn có chắc chắn muốn vô hiệu hóa tài khoản của huấn luyện viên ${selectedTrainer.user?.fullName}?`
+      }
+    };
+
+    return contents[actionType] || {};
   };
 
   const filteredTrainers = trainers.filter(trainer => {
@@ -88,7 +141,7 @@ const TrainerList = () => {
           <Typography variant="h4" component="h2">
             Danh sách huấn luyện viên
           </Typography>
-          {isAdmin && (
+          {canManageTrainers && (
             <Button
               variant="contained"
               color="primary"
@@ -118,14 +171,19 @@ const TrainerList = () => {
         />
 
         {loading ? (
-          <Typography>Đang tải dữ liệu...</Typography>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+            <CircularProgress />
+          </Box>
         ) : filteredTrainers.length === 0 ? (
-          <Typography>Không có huấn luyện viên nào</Typography>
+          <Typography variant="body1" sx={{ mt: 2, textAlign: 'center' }}>
+            {searchTerm ? 'Không tìm thấy huấn luyện viên nào phù hợp' : 'Chưa có huấn luyện viên nào'}
+          </Typography>
         ) : (
-          <TableContainer component={Paper} sx={{ mt: 3 }}>
+          <TableContainer sx={{ mt: 3 }}>
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell>Ảnh đại diện</TableCell>
                   <TableCell>Họ và tên</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell>Số điện thoại</TableCell>
@@ -134,11 +192,18 @@ const TrainerList = () => {
                   <TableCell>Đánh giá</TableCell>
                   <TableCell>Trạng thái</TableCell>
                   <TableCell>Thao tác</TableCell>
-                  </TableRow>
+                </TableRow>
               </TableHead>
               <TableBody>
                 {filteredTrainers.map((trainer) => (
                   <TableRow key={trainer._id}>
+                    <TableCell>
+                      <Avatar 
+                        src={trainer.user?.profileImage ? `http://localhost:5000${trainer.user.profileImage}` : ''} 
+                        alt={trainer.user?.fullName}
+                        sx={{ width: 50, height: 50 }}
+                      />
+                    </TableCell>
                     <TableCell>{trainer.user?.fullName}</TableCell>
                     <TableCell>{trainer.user?.email}</TableCell>
                     <TableCell>{trainer.user?.phoneNumber}</TableCell>
@@ -172,7 +237,7 @@ const TrainerList = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      {isAdmin && (
+                      {canManageTrainers && (
                         <>
                           <IconButton
                             color="primary"
@@ -181,12 +246,21 @@ const TrainerList = () => {
                           >
                             <Edit />
                           </IconButton>
-                          <IconButton
-                            color="error"
-                            onClick={() => deleteTrainer(trainer._id)}
-                          >
-                            <Delete />
-                          </IconButton>
+                          {trainer.user?.active ? (
+                            <IconButton
+                              color="error"
+                              onClick={() => handleOpenDialog(trainer, 'deactivate')}
+                            >
+                              <Block />
+                            </IconButton>
+                          ) : (
+                            <IconButton
+                              color="success"
+                              onClick={() => handleOpenDialog(trainer, 'activate')}
+                            >
+                              <CheckCircle />
+                            </IconButton>
+                          )}
                         </>
                       )}
                       
@@ -209,6 +283,40 @@ const TrainerList = () => {
           </TableContainer>
         )}
       </Paper>
+
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+      >
+        <DialogTitle>
+          {getDialogContent().title}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {getDialogContent().content}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handleCloseDialog}
+            disabled={processingAction}
+          >
+            Hủy
+          </Button>
+          <Button 
+            onClick={handleConfirmAction} 
+            color="primary" 
+            variant="contained"
+            disabled={processingAction}
+          >
+            {processingAction ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Xác nhận'
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

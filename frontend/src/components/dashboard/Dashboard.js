@@ -114,32 +114,36 @@ const Dashboard = () => {
           <ListItemText primary="Thêm huấn luyện viên mới" />
         </ListItemButton>
 
-        <Box sx={{ p: 2, pt: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
-            QUẢN LÝ NỘI BỘ
-          </Typography>
-        </Box>
-        
-        <ListItemButton 
-          component={Link} 
-          to="/staff"
-          selected={window.location.pathname === '/staff'}
-        >
-          <ListItemIcon>
-            <ListIcon />
-          </ListItemIcon>
-          <ListItemText primary="Danh sách nhân viên" />
-        </ListItemButton>
-        <ListItemButton 
-          component={Link} 
-          to="/staff/add"
-          selected={window.location.pathname === '/staff/add'}
-        >
-          <ListItemIcon>
-            <PersonAdd />
-          </ListItemIcon>
-          <ListItemText primary="Thêm nhân viên mới" />
-        </ListItemButton>
+        {user && user.role === 'admin' && (
+          <>
+            <Box sx={{ p: 2, pt: 3 }}>
+              <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                QUẢN LÝ NỘI BỘ
+              </Typography>
+            </Box>
+            
+            <ListItemButton 
+              component={Link} 
+              to="/staff"
+              selected={window.location.pathname === '/staff'}
+            >
+              <ListItemIcon>
+                <ListIcon />
+              </ListItemIcon>
+              <ListItemText primary="Danh sách nhân viên" />
+            </ListItemButton>
+            <ListItemButton 
+              component={Link} 
+              to="/staff/add"
+              selected={window.location.pathname === '/staff/add'}
+            >
+              <ListItemIcon>
+                <PersonAdd />
+              </ListItemIcon>
+              <ListItemText primary="Thêm nhân viên mới" />
+            </ListItemButton>
+          </>
+        )}
       </List>
     </Box>
   );
@@ -235,10 +239,86 @@ const Dashboard = () => {
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
             Quản lý tài khoản của lễ tân và quản trị viên
           </Typography>
+          {user && user.role === 'admin' && (
+            <Button
+              variant="contained"
+              component={Link}
+              to="/staff"
+              sx={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.3)'
+                }
+              }}
+            >
+              Xem danh sách
+            </Button>
+          )}
+        </Paper>
+      </Grid>
+    </Grid>
+  );
+
+  const renderReceptionistDashboard = () => (
+    <Grid container spacing={4}>
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
+            color: 'white'
+          }}
+        >
+          <People sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Quản lý khách hàng
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Quản lý thông tin và tài khoản của khách hàng
+          </Typography>
           <Button
             variant="contained"
             component={Link}
-            to="/staff"
+            to="/customers"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem danh sách
+          </Button>
+        </Paper>
+      </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #43a047 0%, #81c784 100%)',
+            color: 'white'
+          }}
+        >
+          <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Quản lý huấn luyện viên
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Quản lý thông tin và tài khoản của huấn luyện viên
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/trainers"
             sx={{ 
               backgroundColor: 'rgba(255, 255, 255, 0.2)',
               '&:hover': {
@@ -407,8 +487,9 @@ const Dashboard = () => {
 
     switch (user.role) {
       case 'admin':
-      case 'receptionist':
         return renderAdminDashboard();
+      case 'receptionist':
+        return renderReceptionistDashboard();
       case 'customer':
         return renderCustomerDashboard();
       case 'trainer':

@@ -253,6 +253,39 @@ exports.updateTrainer = async (req, res) => {
   }
 };
 
+exports.uploadTrainerProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Không có file nào được tải lên' });
+    }
+
+    const trainer = await Trainer.findById(req.params.id);
+    
+    if (!trainer) {
+      return res.status(404).json({ message: 'Không tìm thấy huấn luyện viên' });
+    }
+
+    const user = await User.findById(trainer.user);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản người dùng' });
+    }
+
+    // Lưu đường dẫn hình ảnh
+    const profileImagePath = `/uploads/${req.file.filename}`;
+    user.profileImage = profileImagePath;
+    await user.save();
+
+    res.json({ 
+      message: 'Tải lên ảnh đại diện thành công',
+      profileImageUrl: profileImagePath 
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Lỗi server');
+  }
+};
+
 // Xóa khách hàng (vô hiệu hóa)
 exports.deleteCustomer = async (req, res) => {
   try {
@@ -272,6 +305,40 @@ exports.deleteCustomer = async (req, res) => {
     await user.save();
     
     res.json({ message: 'Khách hàng đã bị vô hiệu hóa' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Lỗi server');
+  }
+};
+
+// Upload ảnh đại diện cho khách hàng
+exports.uploadCustomerProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Không có file nào được tải lên' });
+    }
+
+    const customer = await Customer.findById(req.params.id);
+    
+    if (!customer) {
+      return res.status(404).json({ message: 'Không tìm thấy khách hàng' });
+    }
+
+    const user = await User.findById(customer.user);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản người dùng' });
+    }
+
+    // Lưu đường dẫn hình ảnh
+    const profileImagePath = `/uploads/${req.file.filename}`;
+    user.profileImage = profileImagePath;
+    await user.save();
+
+    res.json({ 
+      message: 'Tải lên ảnh đại diện thành công',
+      profileImageUrl: profileImagePath 
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Lỗi server');

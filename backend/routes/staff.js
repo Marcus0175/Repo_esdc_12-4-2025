@@ -4,6 +4,7 @@ const { check } = require('express-validator');
 const staffController = require('../controllers/staffController');
 const auth = require('../middlewares/auth');
 const roleCheck = require('../middlewares/roleCheck');
+const upload = require('../middlewares/upload');
 
 // @route   GET api/staff
 // @desc    Get all staff members
@@ -76,6 +77,13 @@ router.put(
   '/:id/deactivate',
   [auth, roleCheck('admin')],
   staffController.deactivateStaff
+);
+
+router.put(
+  '/:id/profile-image',
+  [auth, roleCheck('admin')],
+  upload.single('profileImage'),
+  staffController.uploadProfileImage
 );
 
 module.exports = router;

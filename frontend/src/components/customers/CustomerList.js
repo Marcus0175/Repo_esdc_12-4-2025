@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import AlertContext from '../../contexts/alert/alertContext';
+import AuthContext from '../../contexts/auth/authContext';
 import api from '../../utils/api';
 import {
   Container,
@@ -24,7 +25,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  CircularProgress
+  CircularProgress,
+  Avatar
 } from '@mui/material';
 import {
   Edit,
@@ -37,7 +39,9 @@ import {
 
 const CustomerList = () => {
   const alertContext = useContext(AlertContext);
+  const authContext = useContext(AuthContext);
   const { setAlert } = alertContext;
+  const { user } = authContext;
 
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +50,8 @@ const CustomerList = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [actionType, setActionType] = useState('');
   const [processingAction, setProcessingAction] = useState(false);
+
+  const canManageCustomers = user && (user.role === 'admin' || user.role === 'receptionist');
 
   useEffect(() => {
     getCustomers();
@@ -181,6 +187,7 @@ const CustomerList = () => {
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell>Ảnh đại diện</TableCell>
                   <TableCell>Họ và tên</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell>Số điện thoại</TableCell>
@@ -196,6 +203,13 @@ const CustomerList = () => {
                   const isExpired = isMembershipExpired(customer.membershipEndDate);
                   return (
                     <TableRow key={customer._id}>
+                      <TableCell>
+                        <Avatar 
+                          src={customer.user?.profileImage ? `http://localhost:5000${customer.user.profileImage}` : ''} 
+                          alt={customer.user?.fullName}
+                          sx={{ width: 50, height: 50 }}
+                        />
+                      </TableCell>
                       <TableCell>{customer.user?.fullName}</TableCell>
                       <TableCell>{customer.user?.email}</TableCell>
                       <TableCell>{customer.user?.phoneNumber}</TableCell>
@@ -238,34 +252,38 @@ const CustomerList = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <IconButton
-                          color="primary"
-                          component={Link}
-                          to={`/customers/edit/${customer._id}`}
-                        >
-                          <Edit />
-                        </IconButton>
-                        {customer.user?.active ? (
-                          <Tooltip title="Vô hiệu hóa">
+                        {canManageCustomers && (
+                          <>
                             <IconButton
-                              color="error"
-                              onClick={() => handleOpenDialog(customer, 'deactivate')}
+                              color="primary"
+                              component={Link}
+                              to={`/customers/edit/${customer._id}`}
                             >
-                              <Block />
+                              <Edit />
                             </IconButton>
-                          </Tooltip>
-                        ) : (
-                          <Tooltip title={isExpired ? 'Không thể kích hoạt tài khoản đã hết hạn' : 'Kích hoạt'}>
-                            <span>
-                              <IconButton
-                                color="success"
-                                onClick={() => handleOpenDialog(customer, 'activate')}
-                                disabled={isExpired}
-                              >
-                                <CheckCircle />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
+                            {customer.user?.active ? (
+                              <Tooltip title="Vô hiệu hóa">
+                                <IconButton
+                                  color="error"
+                                  onClick={() => handleOpenDialog(customer, 'deactivate')}
+                                >
+                                  <Block />
+                                </IconButton>
+                              </Tooltip>
+                            ) : (
+                              <Tooltip title={isExpired ? 'Không thể kích hoạt tài khoản đã hết hạn' : 'Kích hoạt'}>
+                                <span>
+                                  <IconButton
+                                    color="success"
+                                    onClick={() => handleOpenDialog(customer, 'activate')}
+                                    disabled={isExpired}
+                                  >
+                                    <CheckCircle />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            )}
+                          </>
                         )}
                       </TableCell>
                     </TableRow>
@@ -289,7 +307,7 @@ const CustomerList = () => {
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             {getDialogContent().content}
-          </DialogContentText>
+            </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button 

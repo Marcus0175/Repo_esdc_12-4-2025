@@ -19,6 +19,7 @@ import {
   IconButton
 } from '@mui/material';
 import { ArrowBack, Save } from '@mui/icons-material';
+import ProfileImageUpload from '../common/ProfileImageUpload';
 
 const StaffForm = () => {
   const { id } = useParams();
@@ -29,6 +30,7 @@ const StaffForm = () => {
 
   const [loading, setLoading] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -56,6 +58,11 @@ const StaffForm = () => {
             password2: ''
           });
           
+          // Lưu ảnh đại diện nếu có
+          if (userData.profileImage) {
+            setProfileImage(`http://localhost:5000${userData.profileImage}`);
+          }
+          
           setLoading(false);
         } catch (err) {
           setAlert('Không thể tải thông tin nhân viên', 'error');
@@ -73,6 +80,11 @@ const StaffForm = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  // Xử lý khi tải lên ảnh thành công
+  const handleImageUpload = (imageUrl) => {
+    setProfileImage(`http://localhost:5000${imageUrl}`);
   };
 
   const handleSubmit = async (e) => {
@@ -123,7 +135,6 @@ const StaffForm = () => {
         setAlert('Thêm nhân viên mới thành công', 'success');
       }
       
-      // Continuing from where we left off in StaffForm.js
       navigate('/staff');
     } catch (err) {
       console.error('Error:', err);
@@ -155,6 +166,16 @@ const StaffForm = () => {
             {isEditMode ? 'Cập nhật thông tin nhân viên' : 'Thêm nhân viên mới'}
           </Typography>
         </Box>
+
+        {/* Phần tải lên ảnh đại diện (chỉ hiển thị khi đang chỉnh sửa) */}
+        {isEditMode && (
+          <ProfileImageUpload
+            userId={id}
+            userType="staff"
+            currentImage={profileImage}
+            onImageUpload={handleImageUpload}
+          />
+        )}
 
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>

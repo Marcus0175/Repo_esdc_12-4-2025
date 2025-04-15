@@ -22,6 +22,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import viLocale from 'date-fns/locale/vi';
+import ProfileImageUpload from '../common/ProfileImageUpload';
 
 const CustomerForm = () => {
   const alertContext = useContext(AlertContext);
@@ -51,6 +52,7 @@ const CustomerForm = () => {
   const [loading, setLoading] = useState(isEditMode);
   const [trainers, setTrainers] = useState([]);
   const [selectedTrainer, setSelectedTrainer] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
 
   useEffect(() => {
     const fetchTrainers = async () => {
@@ -88,6 +90,11 @@ const CustomerForm = () => {
           
           if (customer.assignedTrainer) {
             setSelectedTrainer(customer.assignedTrainer._id);
+          }
+          
+          // Lưu ảnh đại diện nếu có
+          if (customer.user.profileImage) {
+            setProfileImage(`http://localhost:5000${customer.user.profileImage}`);
           }
           
           setLoading(false);
@@ -133,6 +140,11 @@ const CustomerForm = () => {
 
   const handleDateChange = (date) => {
     setFormData({ ...formData, membershipEndDate: date });
+  };
+
+  // Xử lý khi tải lên ảnh thành công
+  const handleImageUpload = (imageUrl) => {
+    setProfileImage(`http://localhost:5000${imageUrl}`);
   };
 
   const onSubmit = async e => {
@@ -202,6 +214,16 @@ const CustomerForm = () => {
             {isEditMode ? 'Chỉnh sửa thông tin khách hàng' : 'Thêm khách hàng mới'}
           </Typography>
         </Box>
+
+        {/* Phần tải lên ảnh đại diện (chỉ hiển thị khi đang chỉnh sửa) */}
+        {isEditMode && (
+          <ProfileImageUpload
+            userId={id}
+            userType="customer"
+            currentImage={profileImage}
+            onImageUpload={handleImageUpload}
+          />
+        )}
 
         <form onSubmit={onSubmit}>
           <Grid container spacing={3}>

@@ -18,6 +18,7 @@ import {
   Autocomplete
 } from '@mui/material';
 import { Save, ArrowBack, Add, Delete } from '@mui/icons-material';
+import ProfileImageUpload from '../common/ProfileImageUpload';
 
 const TrainerForm = () => {
   const alertContext = useContext(AlertContext);
@@ -46,6 +47,7 @@ const TrainerForm = () => {
     issuedBy: '',
     year: ''
   });
+  const [profileImage, setProfileImage] = useState(null);
 
   const specializations = [
     'Giảm cân', 'Tăng cơ', 'Cardio', 'Yoga', 'Pilates', 'Strength Training',
@@ -71,6 +73,11 @@ const TrainerForm = () => {
             certifications: trainer.certifications || [],
             availability: trainer.availability || []
           });
+          
+          // Lưu ảnh đại diện nếu có
+          if (trainer.user.profileImage) {
+            setProfileImage(`http://localhost:5000${trainer.user.profileImage}`);
+          }
           
           setLoading(false);
         } catch (err) {
@@ -143,6 +150,11 @@ const TrainerForm = () => {
     });
   };
 
+  // Xử lý khi tải lên ảnh thành công
+  const handleImageUpload = (imageUrl) => {
+    setProfileImage(`http://localhost:5000${imageUrl}`);
+  };
+
   const onSubmit = async e => {
     e.preventDefault();
     
@@ -190,6 +202,16 @@ const TrainerForm = () => {
             {isEditMode ? 'Chỉnh sửa thông tin huấn luyện viên' : 'Thêm huấn luyện viên mới'}
           </Typography>
         </Box>
+
+        {/* Phần tải lên ảnh đại diện (chỉ hiển thị khi đang chỉnh sửa) */}
+        {isEditMode && (
+          <ProfileImageUpload
+            userId={id}
+            userType="trainer"
+            currentImage={profileImage}
+            onImageUpload={handleImageUpload}
+          />
+        )}
 
         <form onSubmit={onSubmit}>
           <Grid container spacing={3}>

@@ -1,6 +1,6 @@
 import React, { useEffect, useContext } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { createTheme, ThemeProvider, CssBaseline } from '@mui/material';
+import { createTheme, ThemeProvider, CssBaseline, Box } from '@mui/material';
 import Navbar from './components/layout/Navbar';
 import Alert from './components/common/Alert';
 import Login from './components/auth/Login';
@@ -32,117 +32,119 @@ const AppContent = () => {
   return (
     <>
       <Navbar />
-      <Alert />
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        
-        {/* Private Routes */}
-        <Route
-          path="/register"
-          element={
-            <PrivateRoute
-              component={Register}
-              roles={['admin', 'receptionist']}
-            />
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute
-              component={Dashboard}
-              roles={['admin', 'receptionist', 'trainer', 'customer']}
-            />
-          }
-        />
-        <Route
-          path="/customers"
-          element={
-            <PrivateRoute
-              component={CustomerList}
-              roles={['admin', 'receptionist']}
-            />
-          }
-        />
-        <Route
-          path="/customers/add"
-          element={
-            <PrivateRoute
-              component={CustomerForm}
-              roles={['admin', 'receptionist']}
-            />
-          }
-        />
-        <Route
-          path="/customers/edit/:id"
-          element={
-            <PrivateRoute
-              component={CustomerForm}
-              roles={['admin', 'receptionist']}
-            />
-          }
-        />
-        <Route
-          path="/trainers"
-          element={
-            <PrivateRoute
-              component={TrainerList}
-              roles={['admin', 'receptionist', 'customer']}
-            />
-          }
-        />
-        <Route
-          path="/trainers/add"
-          element={
-            <PrivateRoute
-              component={TrainerForm}
-              roles={['admin']}
-            />
-          }
-        />
-        <Route
-          path="/trainers/edit/:id"
-          element={
-            <PrivateRoute
-              component={TrainerForm}
-              roles={['admin']}
-            />
-          }
-        />
-        
-        {/* Staff Management Routes */}
-        <Route
-          path="/staff"
-          element={
-            <PrivateRoute
-              component={StaffList}
-              roles={['admin']}
-            />
-          }
-        />
-        <Route
-          path="/staff/add"
-          element={
-            <PrivateRoute
-              component={StaffForm}
-              roles={['admin']}
-            />
-          }
-        />
-        <Route
-          path="/staff/edit/:id"
-          element={
-            <PrivateRoute
-              component={StaffForm}
-              roles={['admin']}
-            />
-          }
-        />
-        
-        {/* Redirect */}
-        <Route path="/" element={<Navigate to="/dashboard" />} />
-      </Routes>
+      <Box sx={{ mt: '64px' }}>
+        <Alert />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+          
+          {/* Private Routes */}
+          <Route
+            path="/register"
+            element={
+              <PrivateRoute
+                component={Register}
+                roles={['admin', 'receptionist']}
+              />
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute
+                component={Dashboard}
+                roles={['admin', 'receptionist', 'trainer', 'customer']}
+              />
+            }
+          />
+          <Route
+            path="/customers"
+            element={
+              <PrivateRoute
+                component={CustomerList}
+                roles={['admin', 'receptionist']}
+              />
+            }
+          />
+          <Route
+            path="/customers/add"
+            element={
+              <PrivateRoute
+                component={CustomerForm}
+                roles={['admin', 'receptionist']}
+              />
+            }
+          />
+          <Route
+            path="/customers/edit/:id"
+            element={
+              <PrivateRoute
+                component={CustomerForm}
+                roles={['admin', 'receptionist']}
+              />
+            }
+          />
+          <Route
+            path="/trainers"
+            element={
+              <PrivateRoute
+                component={TrainerList}
+                roles={['admin', 'receptionist', 'customer']}
+              />
+            }
+          />
+          <Route
+            path="/trainers/add"
+            element={
+              <PrivateRoute
+                component={TrainerForm}
+                roles={['admin', 'receptionist']}
+              />
+            }
+          />
+          <Route
+            path="/trainers/edit/:id"
+            element={
+              <PrivateRoute
+                component={TrainerForm}
+                roles={['admin', 'receptionist']}
+              />
+            }
+          />
+          
+          {/* Staff Management Routes */}
+          <Route
+            path="/staff"
+            element={
+              <PrivateRoute
+                component={StaffList}
+                roles={['admin']}
+              />
+            }
+          />
+          <Route
+            path="/staff/add"
+            element={
+              <PrivateRoute
+                component={StaffForm}
+                roles={['admin']}
+              />
+            }
+          />
+          <Route
+            path="/staff/edit/:id"
+            element={
+              <PrivateRoute
+                component={StaffForm}
+                roles={['admin']}
+              />
+            }
+          />
+          
+          {/* Redirect */}
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+        </Routes>
+      </Box>
     </>
   );
 };

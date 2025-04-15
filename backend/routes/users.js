@@ -4,6 +4,7 @@ const { check } = require('express-validator');
 const userController = require('../controllers/userController');
 const auth = require('../middlewares/auth');
 const roleCheck = require('../middlewares/roleCheck');
+const upload = require('../middlewares/upload');
 
 // @route   GET api/users/customers
 // @desc    Lấy danh sách tất cả khách hàng
@@ -44,12 +45,12 @@ router.post(
 
 // @route   POST api/users/trainers
 // @desc    Thêm huấn luyện viên mới
-// @access  Private (admin only)
+// @access  Private (admin, receptionist) 
 router.post(
   '/trainers',
   [
     auth,
-    roleCheck('admin'),
+    roleCheck('admin', 'receptionist'),
     [
       check('username', 'Vui lòng nhập username').not().isEmpty(),
       check('password', 'Vui lòng nhập mật khẩu ít nhất 6 ký tự').isLength({ min: 6 }),
@@ -72,28 +73,28 @@ router.put(
 
 // @route   PUT api/users/trainers/:id
 // @desc    Cập nhật thông tin huấn luyện viên
-// @access  Private (admin)
+// @access  Private (admin, receptionist)
 router.put(
   '/trainers/:id',
-  [auth, roleCheck('admin')],
+  [auth, roleCheck('admin', 'receptionist')],
   userController.updateTrainer
 );
 
 // @route   DELETE api/users/customers/:id
 // @desc    Vô hiệu hóa tài khoản khách hàng
-// @access  Private (admin)
+// @access  Private (admin, receptionist)
 router.delete(
   '/customers/:id',
-  [auth, roleCheck('admin')],
+  [auth, roleCheck('admin', 'receptionist')],
   userController.deleteCustomer
 );
 
 // @route   PUT api/users/customers/:id/activate
 // @desc    Kích hoạt tài khoản khách hàng
-// @access  Private (admin only)
+// @access  Private (admin, receptionist)
 router.put(
   '/customers/:id/activate',
-  [auth, roleCheck('admin')],
+  [auth, roleCheck('admin', 'receptionist')],
   userController.activateCustomer
 );
 
@@ -113,6 +114,23 @@ router.get(
   '/trainers/:id',
   [auth, roleCheck('admin', 'receptionist', 'customer')],
   userController.getTrainer
+);
+
+router.put(
+  '/trainers/:id/profile-image',
+  [auth, roleCheck('admin', 'receptionist')],
+  upload.single('profileImage'),
+  userController.uploadTrainerProfileImage
+);
+
+// @route   PUT api/users/customers/:id/profile-image
+// @desc    Upload ảnh đại diện cho khách hàng
+// @access  Private (admin, receptionist)
+router.put(
+  '/customers/:id/profile-image',
+  [auth, roleCheck('admin', 'receptionist')],
+  upload.single('profileImage'),
+  userController.uploadCustomerProfileImage
 );
 
 module.exports = router;

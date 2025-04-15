@@ -162,6 +162,43 @@ exports.activateStaff = async (req, res) => {
   }
 };
 
+// ... các hàm khác giữ nguyên
+
+// Upload ảnh đại diện cho nhân viên
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Không có file nào được tải lên' });
+    }
+
+    const staff = await User.findById(req.params.id);
+    
+    if (!staff || !['admin', 'receptionist'].includes(staff.role)) {
+      return res.status(404).json({ message: 'Không tìm thấy nhân viên' });
+    }
+    
+    // Lưu đường dẫn hình ảnh
+    const profileImagePath = `/uploads/${req.file.filename}`;
+    staff.profileImage = profileImagePath;
+    await staff.save();
+
+    res.json({ 
+      message: 'Tải lên ảnh đại diện thành công',
+      profileImageUrl: profileImagePath 
+    });
+  } catch (err) {
+    console.error(err.message);
+    
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ message: 'Không tìm thấy nhân viên' });
+    }
+    
+    res.status(500).send('Lỗi server');
+  }
+};
+
+// ... các hàm khác giữ nguyên
+
 // Deactivate staff account
 exports.deactivateStaff = async (req, res) => {
   try {
