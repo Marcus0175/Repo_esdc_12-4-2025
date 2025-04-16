@@ -22,7 +22,7 @@ exports.getSchedule = async (req, res) => {
       }
     }
     
-    res.json({ schedule: trainer.availability || [] });
+    res.json({ schedule: trainer.availability || [], trainerId: trainer._id });
   } catch (err) {
     console.error(err.message);
     
@@ -80,9 +80,19 @@ exports.updateSchedule = async (req, res) => {
 // @access  Private (trainer, admin)
 exports.deleteScheduleItem = async (req, res) => {
   try {
+    console.log('Delete schedule request:', {
+      trainerId: req.params.trainerId,
+      scheduleId: req.params.scheduleId,
+      user: {
+        id: req.user.id,
+        role: req.user.role
+      }
+    });
+    
     const trainer = await Trainer.findById(req.params.trainerId);
     
     if (!trainer) {
+      console.log('Trainer not found with ID:', req.params.trainerId);
       return res.status(404).json({ message: 'Không tìm thấy huấn luyện viên' });
     }
     
@@ -90,12 +100,25 @@ exports.deleteScheduleItem = async (req, res) => {
     if (req.user.role !== 'admin') {
       const trainerUser = await Trainer.findOne({ user: req.user.id });
       
-      if (!trainerUser || trainerUser._id.toString() !== req.params.trainerId) {
-        return res.status(403).json({ message: 'Không có quyền xóa lịch làm việc' });
+      console.log('Current trainer user:', trainerUser ? trainerUser._id : 'None');
+      
+      if (!trainerUser) {
+        return res.status(404).json({ message: 'Không tìm thấy thông tin huấn luyện viên đang đăng nhập' });
+      }
+      
+      if (trainerUser._id.toString() !== req.params.trainerId) {
+        return res.status(403).json({ 
+          message: 'Không có quyền xóa lịch làm việc',
+          yourId: trainerUser._id.toString(),
+          requestedId: req.params.trainerId
+        });
       }
     }
     
     // Tìm và xóa lịch làm việc theo ID
+    console.log('Looking for schedule ID:', req.params.scheduleId);
+    console.log('Available schedules:', trainer.availability.map(s => s._id.toString()));
+    
     const scheduleIndex = trainer.availability.findIndex(
       item => item._id.toString() === req.params.scheduleId
     );
@@ -109,7 +132,7 @@ exports.deleteScheduleItem = async (req, res) => {
     
     res.json({ message: 'Đã xóa lịch làm việc', schedule: trainer.availability });
   } catch (err) {
-    console.error(err.message);
+    console.error('Error in deleteScheduleItem:', err);
     
     if (err.kind === 'ObjectId') {
       return res.status(404).json({ message: 'Không tìm thấy huấn luyện viên hoặc lịch làm việc' });
@@ -221,7 +244,11 @@ exports.getMySchedule = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy thông tin huấn luyện viên' });
     }
     
-    res.json({ schedule: trainer.availability || [] });
+    // Return the trainer ID in the response so the frontend knows it
+    res.json({ 
+      schedule: trainer.availability || [], 
+      trainerId: trainer._id // Include the actual trainerId in the response
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Lỗi server');

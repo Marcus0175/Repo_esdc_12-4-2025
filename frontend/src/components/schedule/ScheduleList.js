@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import ScheduleContext from '../../contexts/schedule/scheduleContext';
 import AlertContext from '../../contexts/alert/alertContext';
 import AuthContext from '../../contexts/auth/authContext';
@@ -22,13 +22,17 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  CircularProgress
+  CircularProgress,
+  Tooltip,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import {
   Add,
   Delete,
   AccessTime,
-  ArrowBack
+  ArrowBack,
+  Refresh
 } from '@mui/icons-material';
 import ScheduleForm from './ScheduleForm';
 
@@ -59,13 +63,16 @@ const ScheduleList = () => {
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [isMySchedule, setIsMySchedule] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
 
   useEffect(() => {
-    // Only fetch schedule data when the component mounts or id changes
+    // Only fetch schedule data when the component mounts or id changes or on refresh
     const loadSchedule = async () => {
       if (isLoaded) return;
       
       try {
+        console.log('Loading schedule data in ScheduleList.js');
         if (id) {
           await getSchedule(id);
           setIsMySchedule(false);
@@ -87,7 +94,12 @@ const ScheduleList = () => {
       clearSchedule();
     };
     // eslint-disable-next-line
-  }, [id]);
+  }, [id, lastRefresh]);
+
+  const handleRefresh = () => {
+    setIsLoaded(false);
+    setLastRefresh(Date.now());
+  };
 
   const handleOpenForm = () => {
     setOpenForm(true);
@@ -107,15 +119,46 @@ const ScheduleList = () => {
     setSelectedSchedule(null);
   };
 
+  const handleFormSuccess = () => {
+    // Refresh the schedule data after successful form submission
+    setIsLoaded(false);
+    setLastRefresh(Date.now());
+    setSuccessMessage('Lịch làm việc đã được thêm thành công');
+  };
+
   const handleDeleteSchedule = async () => {
     try {
-      const targetTrainerId = isMySchedule ? trainerId : id;
-      await deleteScheduleItem(targetTrainerId, selectedSchedule._id);
-      setAlert('Đã xóa lịch làm việc thành công', 'success');
+      // Debug log to see the values
+      console.log('Deleting schedule:', {
+        isMySchedule,
+        trainerId,
+        selectedSchedule
+      });
+      
+      // Use the correct trainerId based on the context
+      const actualTrainerId = isMySchedule ? trainerId : id;
+      
+      if (!actualTrainerId || !selectedSchedule?._id) {
+        setAlert('Missing trainerId or scheduleId', 'error');
+        handleCloseDeleteDialog();
+        return;
+      }
+      
+      await deleteScheduleItem(actualTrainerId, selectedSchedule._id);
+      setSuccessMessage('Đã xóa lịch làm việc thành công');
       handleCloseDeleteDialog();
+      
+      // Refresh data after deletion
+      handleRefresh();
     } catch (err) {
+      console.error('Delete schedule error:', err);
       setAlert(err.response?.data?.message || 'Lỗi khi xóa lịch làm việc', 'error');
+      handleCloseDeleteDialog();
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSuccessMessage('');
   };
 
   // Sắp xếp lịch làm việc theo thứ tự các ngày trong tuần
@@ -179,16 +222,27 @@ const ScheduleList = () => {
           <Typography variant="h4" component="h2" sx={{ flexGrow: 1 }}>
             {isMySchedule ? 'Lịch làm việc của tôi' : 'Lịch làm việc huấn luyện viên'}
           </Typography>
-          {(isMySchedule || (user && user.role === 'admin')) && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<Add />}
-              onClick={handleOpenForm}
-            >
-              Thêm lịch mới
-            </Button>
-          )}
+          <Box>
+            <Tooltip title="Làm mới dữ liệu">
+              <IconButton 
+                onClick={handleRefresh} 
+                color="primary"
+                sx={{ mr: 1 }}
+              >
+                <Refresh />
+              </IconButton>
+            </Tooltip>
+            {(isMySchedule || (user && user.role === 'admin')) && (
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<Add />}
+                onClick={handleOpenForm}
+              >
+                Thêm lịch mới
+              </Button>
+            )}
+          </Box>
         </Box>
 
         {error ? (
@@ -280,8 +334,34 @@ const ScheduleList = () => {
         handleClose={handleCloseForm} 
         trainerId={isMySchedule ? trainerId : id}
         isMySchedule={isMySchedule}
-        onSuccess={() => setIsLoaded(false)}
+        onSuccess={handleFormSuccess}
       />
+
+      {/* Success message snackbar */}
+      <Snackbar 
+        open={!!successMessage} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
+
+      {/* Link to Calendar View if we're on the list view */}
+      {isMySchedule && (
+        <Box mt={3} textAlign="center">
+          <Button
+            component={Link}
+            to="/my-schedule"
+            variant="outlined"
+            color="primary"
+          >
+            Xem dạng lịch
+          </Button>
+        </Box>
+      )}
     </Container>
   );
 };

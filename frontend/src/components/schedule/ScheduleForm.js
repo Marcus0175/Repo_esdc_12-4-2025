@@ -26,7 +26,7 @@ const ScheduleForm = ({ open, handleClose, trainerId, isMySchedule, onSuccess })
   const scheduleContext = useContext(ScheduleContext);
   const alertContext = useContext(AlertContext);
   
-  const { addScheduleItem } = scheduleContext;
+  const { addScheduleItem, getMySchedule } = scheduleContext;
   const { setAlert } = alertContext;
   
   const [formData, setFormData] = useState({
@@ -104,12 +104,18 @@ const ScheduleForm = ({ open, handleClose, trainerId, isMySchedule, onSuccess })
     setSubmitting(true);
     
     try {
+      // Check if we have a valid trainerId
+      if (!trainerId || trainerId === 'me') {
+        setAlert('Không thể xác định huấn luyện viên. Vui lòng thử lại sau.', 'error');
+        setSubmitting(false);
+        return;
+      }
+      
+      console.log('Using trainerId for adding schedule:', trainerId);
+      
       // Format thời gian thành chuỗi HH:mm
       const formattedStartTime = format(new Date(startTime), 'HH:mm');
       const formattedEndTime = format(new Date(endTime), 'HH:mm');
-      
-      console.log('trainerId:', trainerId);
-      console.log('Sending schedule data:', {day, startTime: formattedStartTime, endTime: formattedEndTime});
       
       const scheduleData = {
         day,
@@ -117,13 +123,28 @@ const ScheduleForm = ({ open, handleClose, trainerId, isMySchedule, onSuccess })
         endTime: formattedEndTime
       };
       
+      // Add the schedule item
       await addScheduleItem(trainerId, scheduleData);
       
+      // After successful addition, refresh the schedule data
+      // This is important to keep both views in sync
+      try {
+        await getMySchedule();
+      } catch (refreshErr) {
+        console.error('Error refreshing schedule data:', refreshErr);
+        // Continue with success flow even if the refresh fails
+      }
+      
+      // Show success message
       setAlert('Thêm lịch làm việc thành công', 'success');
+      
+      // Reset form
       resetForm();
+      
+      // Close the dialog
       handleClose();
       
-      // Thông báo cho component cha rằng lịch đã được thêm thành công
+      // Call the success callback to notify parent component
       if (onSuccess && typeof onSuccess === 'function') {
         onSuccess();
       }

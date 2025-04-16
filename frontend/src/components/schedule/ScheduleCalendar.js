@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo } from 'react';
+import React, { useState, useEffect, useContext, useMemo, useRef } from 'react';
 import ScheduleContext from '../../contexts/schedule/scheduleContext';
 import AuthContext from '../../contexts/auth/authContext';
 import AlertContext from '../../contexts/alert/alertContext';
@@ -12,9 +12,11 @@ import {
   CardContent,
   Divider,
   Button,
-  CircularProgress
+  CircularProgress,
+  IconButton,
+  Tooltip
 } from '@mui/material';
-import { Add, AccessTime } from '@mui/icons-material';
+import { Add, AccessTime, Refresh, RefreshOutlined } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 
 const ScheduleCalendar = () => {
@@ -26,16 +28,26 @@ const ScheduleCalendar = () => {
   const { user } = authContext;
   const { setAlert } = alertContext;
   
+  // Use useRef to track if data has already been loaded
+  const dataLoadedRef = useRef(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
   
+  // Load schedule data when component mounts or refresh is triggered
   useEffect(() => {
+    // Skip if we're already loading or if data has been loaded (unless this is a manual refresh)
+    if (loading || (dataLoadedRef.current && lastRefresh === 0)) {
+      return;
+    }
+    
     const loadSchedule = async () => {
-      if (isLoaded) return;
-      
       try {
+        console.log('Loading schedule in Calendar component');
         await getMySchedule();
         setIsLoaded(true);
+        dataLoadedRef.current = true;
       } catch (err) {
+        console.error('Error loading schedule in Calendar:', err);
         setAlert('Không thể tải lịch làm việc', 'error');
         setIsLoaded(true);
       }
@@ -44,12 +56,22 @@ const ScheduleCalendar = () => {
     if (user && user.role === 'trainer') {
       loadSchedule();
     }
-    
+  }, [user, lastRefresh, loading, getMySchedule, setAlert]); 
+  
+  // Reset on unmount
+  useEffect(() => {
     return () => {
       clearSchedule();
+      dataLoadedRef.current = false;
     };
-    // eslint-disable-next-line
-  }, [user]);
+  }, [clearSchedule]);
+  
+  // Manual refresh function
+  const handleRefresh = () => {
+    dataLoadedRef.current = false;
+    setIsLoaded(false);
+    setLastRefresh(Date.now());
+  };
   
   // Organize schedule items by day of week - do this once with useMemo
   const weekSchedule = useMemo(() => {
@@ -106,6 +128,14 @@ const ScheduleCalendar = () => {
     return (
       <Box sx={{ p: 2 }}>
         <Typography color="error">{error}</Typography>
+        <Button 
+          variant="outlined" 
+          startIcon={<Refresh />} 
+          onClick={handleRefresh}
+          sx={{ mt: 2 }}
+        >
+          Thử lại
+        </Button>
       </Box>
     );
   }
@@ -125,15 +155,26 @@ const ScheduleCalendar = () => {
           <Typography variant="h5" component="h2">
             Lịch làm việc trong tuần
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Add />}
-            component={Link}
-            to="/schedule"
-          >
-            Quản lý lịch làm việc
-          </Button>
+          <Box>
+            <Tooltip title="Làm mới dữ liệu">
+              <IconButton 
+                onClick={handleRefresh} 
+                sx={{ mr: 1 }}
+                color="primary"
+              >
+                <RefreshOutlined />
+              </IconButton>
+            </Tooltip>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Add />}
+              component={Link}
+              to="/schedule"
+            >
+              Quản lý lịch làm việc
+            </Button>
+          </Box>
         </Box>
         
         <Divider sx={{ mb: 3 }} />
