@@ -27,6 +27,12 @@ import AuthState from './contexts/auth/AuthState';
 import AlertState from './contexts/alert/AlertState';
 import EquipmentState from './contexts/equipment/EquipmentState';
 import ScheduleState from './contexts/schedule/ScheduleState';
+import ServiceState from './contexts/service/ServiceState';
+import ServiceList from './components/services/ServiceList';
+import ServiceForm from './components/services/ServiceForm';
+import ServiceRegistrationForm from './components/services/ServiceRegistrationForm';
+import MyRegistrations from './components/services/MyRegistrations';
+import TrainerRegistrations from './components/services/TrainerRegistrations';
 
 const AppContent = () => {
   const authContext = useContext(AuthContext);
@@ -118,6 +124,64 @@ const AppContent = () => {
               <PrivateRoute
                 component={TrainerForm}
                 roles={['admin', 'receptionist']}
+              />
+            }
+          />
+          
+          {/* Service management routes */}
+          <Route
+            path="/services"
+            element={
+              <PrivateRoute
+                component={ServiceList}
+                roles={['admin', 'receptionist', 'customer']}
+              />
+            }
+          />
+          <Route
+            path="/services/add"
+            element={
+              <PrivateRoute
+                component={ServiceForm}
+                roles={['admin']}
+              />
+            }
+          />
+          <Route
+            path="/services/edit/:id"
+            element={
+              <PrivateRoute
+                component={ServiceForm}
+                roles={['admin']}
+              />
+            }
+          />
+
+          {/* Service Registration Routes */}
+          <Route
+            path="/service-registration/:serviceId"
+            element={
+              <PrivateRoute
+                component={ServiceRegistrationForm}
+                roles={['customer']}
+              />
+            }
+          />
+          <Route
+            path="/my-registrations"
+            element={
+              <PrivateRoute
+                component={MyRegistrations}
+                roles={['customer']}
+              />
+            }
+          />
+          <Route
+            path="/trainer-registrations"
+            element={
+              <PrivateRoute
+                component={TrainerRegistrations}
+                roles={['trainer']}
               />
             }
           />
@@ -256,7 +320,7 @@ const AppContent = () => {
             }
           />
 
-<Route
+          <Route
             path="/trainers/:id"
             element={
               <PrivateRoute
@@ -301,12 +365,14 @@ const App = () => {
       <AlertState>
         <EquipmentState>
           <ScheduleState>
-            <ThemeProvider theme={theme}>
-              <CssBaseline />
-              <Router>
-                <AppContent />
-              </Router>
-            </ThemeProvider>
+            <ServiceState>
+              <ThemeProvider theme={theme}>
+                <CssBaseline />
+                <Router>
+                  <AppContent />
+                </Router>
+              </ThemeProvider>
+            </ServiceState>
           </ScheduleState>
         </EquipmentState>
       </AlertState>
@@ -314,4 +380,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default App; 

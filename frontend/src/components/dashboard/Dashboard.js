@@ -24,7 +24,10 @@ import {
   Build,
   Schedule,
   Schedule as ScheduleIcon,
-  Handyman
+  Handyman,
+  Spa,
+  Assignment,
+  ListAlt
 } from '@mui/icons-material';
 
 
@@ -268,6 +271,42 @@ const Dashboard = () => {
           </Button>
         </Paper>
       </Grid>
+
+      <Grid item xs={12} md={6}>
+  <Paper
+    sx={{
+      p: 3,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      background: 'linear-gradient(135deg, #d81b60 0%, #f06292 100%)',
+      color: 'white'
+    }}
+  >
+    <Spa sx={{ fontSize: 50, mb: 2 }} />
+    <Typography variant="h5" gutterBottom>
+      Quản lý dịch vụ
+    </Typography>
+    <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+      Quản lý các dịch vụ tập luyện và đăng ký dịch vụ
+    </Typography>
+    <Button
+      variant="contained"
+      component={Link}
+      to="/services"
+      sx={{ 
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.3)'
+        }
+      }}
+    >
+      Xem dịch vụ
+    </Button>
+  </Paper>
+</Grid>
+
 
       <Grid item xs={12} md={4}>
         <Paper
@@ -593,6 +632,58 @@ const Dashboard = () => {
           </Button>
         </Paper>
       </Grid>
+      
+      <Grid item xs={12} md={6}>
+  <Paper
+    sx={{
+      p: 3,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      background: 'linear-gradient(135deg, #d81b60 0%, #f06292 100%)',
+      color: 'white'
+    }}
+  >
+    <Spa sx={{ fontSize: 50, mb: 2 }} />
+    <Typography variant="h5" gutterBottom>
+      Dịch vụ
+    </Typography>
+    <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+      Xem và đăng ký các dịch vụ huấn luyện
+    </Typography>
+    <Box sx={{ display: 'flex', gap: 2 }}>
+      <Button
+        variant="contained"
+        component={Link}
+        to="/services"
+        sx={{ 
+          backgroundColor: 'rgba(255, 255, 255, 0.2)',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.3)'
+          }
+        }}
+      >
+        Đăng ký dịch vụ
+      </Button>
+      <Button
+        variant="outlined"
+        component={Link}
+        to="/my-registrations"
+        sx={{ 
+          color: 'white',
+          borderColor: 'white',
+          '&:hover': {
+            borderColor: 'white',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+          }
+        }}
+      >
+        Đăng ký của tôi
+      </Button>
+    </Box>
+  </Paper>
+</Grid>
 
       <Grid item xs={12} md={6}>
         <Paper
@@ -668,6 +759,41 @@ const Dashboard = () => {
         </Paper>
       </Grid>
 
+      <Grid item xs={12} md={4}>
+  <Paper
+    sx={{
+      p: 3,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      background: 'linear-gradient(135deg, #d81b60 0%, #f06292 100%)',
+      color: 'white'
+    }}
+  >
+    <Assignment sx={{ fontSize: 50, mb: 2 }} />
+    <Typography variant="h5" gutterBottom>
+      Đăng ký dịch vụ
+    </Typography>
+    <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+      Quản lý đăng ký dịch vụ từ khách hàng
+    </Typography>
+    <Button
+      variant="contained"
+      component={Link}
+      to="/trainer-registrations"
+      sx={{ 
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.3)'
+        }
+      }}
+    >
+      Xem đăng ký
+    </Button>
+  </Paper>
+</Grid>
+      
       <Grid item xs={12} md={4}>
         <Paper
           sx={{

@@ -12,11 +12,14 @@ import {
   ListItemIcon,
   ListItemText,
   Avatar,
+  Divider, // Thêm import Divider
 } from '@mui/material';
 import {
   Person,
   ExitToApp,
-  KeyboardArrowDown
+  KeyboardArrowDown,
+  FitnessCenter, // Thêm import biểu tượng FitnessCenter
+  Assignment, // Thêm import biểu tượng Assignment
 } from '@mui/icons-material';
 
 const Navbar = () => {
@@ -93,6 +96,47 @@ const Navbar = () => {
             },
           }}
         >
+          {/* Thêm menu item dựa trên vai trò người dùng */}
+          {user?.role === 'customer' && (
+            <>
+              <MenuItem component={Link} to="/services" onClick={handleMenuClose}>
+                <ListItemIcon>
+                  <FitnessCenter fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Đăng ký dịch vụ</ListItemText>
+              </MenuItem>
+              <MenuItem component={Link} to="/my-registrations" onClick={handleMenuClose}>
+                <ListItemIcon>
+                  <Assignment fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Đăng ký của tôi</ListItemText>
+              </MenuItem>
+              <Divider />
+            </>
+          )}
+          {user?.role === 'trainer' && (
+            <>
+              <MenuItem component={Link} to="/trainer-registrations" onClick={handleMenuClose}>
+                <ListItemIcon>
+                  <Assignment fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Quản lý đăng ký dịch vụ</ListItemText>
+              </MenuItem>
+              <Divider />
+            </>
+          )}
+          {(user?.role === 'admin' || user?.role === 'receptionist') && (
+            <>
+              <MenuItem component={Link} to="/services" onClick={handleMenuClose}>
+                <ListItemIcon>
+                  <FitnessCenter fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Quản lý dịch vụ</ListItemText>
+              </MenuItem>
+              <Divider />
+            </>
+          )}
+          {/* Menu item đăng xuất */}
           <MenuItem onClick={handleLogout}>
             <ListItemIcon>
               <ExitToApp fontSize="small" />

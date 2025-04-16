@@ -1,0 +1,712 @@
+import React, { useState, useEffect, useContext } from 'react';
+import AlertContext from '../../contexts/alert/alertContext';
+import api from '../../utils/api';
+import {
+  Container,
+  Paper,
+  Typography,
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Button,
+  Chip,
+  Divider,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  TextField,
+  Tabs,
+  Tab,
+  Avatar,
+  LinearProgress,
+  IconButton,
+  Tooltip
+} from '@mui/material';
+import {
+  Check,
+  Close,
+  Schedule,
+  FitnessCenter,
+  Person,
+  Add,
+  CalendarMonth,
+  ExpandMore,
+  ExpandLess
+} from '@mui/icons-material';
+
+// Tab panel component
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`registration-tabpanel-${index}`}
+      aria-labelledby={`registration-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ py: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
+const TrainerRegistrations = () => {
+  const alertContext = useContext(AlertContext);
+  const { setAlert } = alertContext;
+
+  const [registrations, setRegistrations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [tabValue, setTabValue] = useState(0);
+  const [expandedIds, setExpandedIds] = useState([]);
+
+  // Dialog states
+  const [approveDialog, setApproveDialog] = useState({ open: false, registration: null });
+  const [rejectDialog, setRejectDialog] = useState({ open: false, registration: null, reason: '' });
+  const [sessionDialog, setSessionDialog] = useState({ open: false, registration: null, sessions: 0 });
+  const [processing, setProcessing] = useState(false);
+
+  useEffect(() => {
+    fetchRegistrations();
+  }, []);
+
+  const fetchRegistrations = async () => {
+    try {
+      const res = await api.get('/service-registrations/my-customers');
+      setRegistrations(res.data);
+      setLoading(false);
+    } catch (err) {
+      setAlert('Không thể tải danh sách đăng ký dịch vụ', 'error');
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatCurrency = (price) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  };
+
+  const getStatusColor = (status) => {
+    const statusMap = {
+      'pending': 'warning',
+      'approved': 'primary',
+      'rejected': 'error',
+      'completed': 'success',
+      'canceled': 'default'
+    };
+    return statusMap[status] || 'default';
+  };
+
+  const getStatusLabel = (status) => {
+    const statusMap = {
+      'pending': 'Chờ xác nhận',
+      'approved': 'Đã xác nhận',
+      'rejected': 'Từ chối',
+      'completed': 'Hoàn thành',
+      'canceled': 'Đã hủy'
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusIcon = (status) => {
+    const statusMap = {
+      'pending': <Schedule fontSize="small" />,
+      'approved': <Check fontSize="small" />,
+      'rejected': <Close fontSize="small" />,
+      'completed': <Check fontSize="small" />,
+      'canceled': <Close fontSize="small" />
+    };
+    return statusMap[status] || null;
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const handleToggleExpand = (id) => {
+    setExpandedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  // Filter registrations based on tab
+  const getFilteredRegistrations = () => {
+    switch (tabValue) {
+      case 0: // All
+        return registrations;
+      case 1: // Pending
+        return registrations.filter(reg => reg.status === 'pending');
+      case 2: // Approved
+        return registrations.filter(reg => reg.status === 'approved');
+      case 3: // Completed/Rejected/Canceled
+        return registrations.filter(reg => ['completed', 'rejected', 'canceled'].includes(reg.status));
+      default:
+        return registrations;
+    }
+  };
+
+  // Handle approve registration
+  const handleOpenApproveDialog = (registration) => {
+    setApproveDialog({ open: true, registration });
+  };
+
+  const handleCloseApproveDialog = () => {
+    setApproveDialog({ open: false, registration: null });
+  };
+
+  const handleApproveRegistration = async () => {
+    if (!approveDialog.registration) return;
+
+    setProcessing(true);
+    try {
+      await api.put(`/service-registrations/${approveDialog.registration._id}/status`, {
+        status: 'approved'
+      });
+      setAlert('Đã xác nhận đăng ký dịch vụ thành công', 'success');
+      fetchRegistrations(); // Refresh the list
+    } catch (err) {
+      setAlert(err.response?.data?.message || 'Có lỗi xảy ra khi xác nhận đăng ký', 'error');
+    } finally {
+      setProcessing(false);
+      handleCloseApproveDialog();
+    }
+  };
+
+  // Handle reject registration
+  const handleOpenRejectDialog = (registration) => {
+    setRejectDialog({ open: true, registration, reason: '' });
+  };
+
+  const handleCloseRejectDialog = () => {
+    setRejectDialog({ open: false, registration: null, reason: '' });
+  };
+
+  const handleRejectRegistration = async () => {
+    if (!rejectDialog.registration || !rejectDialog.reason.trim()) {
+      setAlert('Vui lòng nhập lý do từ chối', 'error');
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      await api.put(`/service-registrations/${rejectDialog.registration._id}/status`, {
+        status: 'rejected',
+        rejectionReason: rejectDialog.reason
+      });
+      setAlert('Đã từ chối đăng ký dịch vụ', 'success');
+      fetchRegistrations(); // Refresh the list
+    } catch (err) {
+      setAlert(err.response?.data?.message || 'Có lỗi xảy ra khi từ chối đăng ký', 'error');
+    } finally {
+      setProcessing(false);
+      handleCloseRejectDialog();
+    }
+  };
+
+  // Handle update completed sessions
+  const handleOpenSessionDialog = (registration) => {
+    setSessionDialog({ 
+      open: true, 
+      registration, 
+      sessions: registration.completedSessions 
+    });
+  };
+
+  const handleCloseSessionDialog = () => {
+    setSessionDialog({ open: false, registration: null, sessions: 0 });
+  };
+
+  const handleUpdateSessions = async () => {
+    if (!sessionDialog.registration) return;
+
+    // Validate sessions count
+    const sessions = parseInt(sessionDialog.sessions);
+    if (isNaN(sessions) || sessions < 0 || sessions > sessionDialog.registration.numberOfSessions) {
+      setAlert(`Số buổi phải từ 0 đến ${sessionDialog.registration.numberOfSessions}`, 'error');
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      await api.put(`/service-registrations/${sessionDialog.registration._id}/sessions`, {
+        completedSessions: sessions
+      });
+      setAlert('Đã cập nhật số buổi hoàn thành', 'success');
+      fetchRegistrations(); // Refresh the list
+    } catch (err) {
+      setAlert(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật số buổi', 'error');
+    } finally {
+      setProcessing(false);
+      handleCloseSessionDialog();
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Paper sx={{ p: 3 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4" component="h2">
+            Khách hàng đăng ký dịch vụ
+          </Typography>
+        </Box>
+
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange} 
+          aria-label="registration tabs"
+          variant="fullWidth"
+        >
+          <Tab label="Tất cả" />
+          <Tab 
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                Chờ xác nhận
+                {registrations.filter(r => r.status === 'pending').length > 0 && (
+                  <Chip 
+                    label={registrations.filter(r => r.status === 'pending').length} 
+                    color="warning" 
+                    size="small" 
+                    sx={{ ml: 1 }} 
+                  />
+                )}
+              </Box>
+            } 
+          />
+          <Tab label="Đang thực hiện" />
+          <Tab label="Đã hoàn thành/Từ chối/Hủy" />
+        </Tabs>
+
+        <TabPanel value={tabValue} index={0}>
+          <RenderRegistrationList 
+            registrations={getFilteredRegistrations()} 
+            expandedIds={expandedIds}
+            handleToggleExpand={handleToggleExpand}
+            handleOpenApproveDialog={handleOpenApproveDialog}
+            handleOpenRejectDialog={handleOpenRejectDialog}
+            handleOpenSessionDialog={handleOpenSessionDialog}
+          />
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={1}>
+          <RenderRegistrationList 
+            registrations={getFilteredRegistrations()} 
+            expandedIds={expandedIds}
+            handleToggleExpand={handleToggleExpand}
+            handleOpenApproveDialog={handleOpenApproveDialog}
+            handleOpenRejectDialog={handleOpenRejectDialog}
+            handleOpenSessionDialog={handleOpenSessionDialog}
+          />
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={2}>
+          <RenderRegistrationList 
+            registrations={getFilteredRegistrations()} 
+            expandedIds={expandedIds}
+            handleToggleExpand={handleToggleExpand}
+            handleOpenApproveDialog={handleOpenApproveDialog}
+            handleOpenRejectDialog={handleOpenRejectDialog}
+            handleOpenSessionDialog={handleOpenSessionDialog}
+          />
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={3}>
+          <RenderRegistrationList 
+            registrations={getFilteredRegistrations()} 
+            expandedIds={expandedIds}
+            handleToggleExpand={handleToggleExpand}
+            handleOpenApproveDialog={handleOpenApproveDialog}
+            handleOpenRejectDialog={handleOpenRejectDialog}
+            handleOpenSessionDialog={handleOpenSessionDialog}
+          />
+        </TabPanel>
+      </Paper>
+
+      {/* Approve Dialog */}
+      <Dialog
+        open={approveDialog.open}
+        onClose={handleCloseApproveDialog}
+      >
+        <DialogTitle>Xác nhận đăng ký dịch vụ</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Bạn có chắc chắn muốn xác nhận đăng ký dịch vụ từ khách hàng{' '}
+            <strong>{approveDialog.registration?.customer?.user?.fullName}</strong>?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseApproveDialog} disabled={processing}>
+            Hủy
+          </Button>
+          <Button 
+            onClick={handleApproveRegistration} 
+            color="primary" 
+            variant="contained"
+            disabled={processing}
+          >
+            {processing ? <CircularProgress size={24} color="inherit" /> : 'Xác nhận'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog
+        open={rejectDialog.open}
+        onClose={handleCloseRejectDialog}
+      >
+        <DialogTitle>Từ chối đăng ký dịch vụ</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Vui lòng nhập lý do từ chối đăng ký dịch vụ từ khách hàng{' '}
+            <strong>{rejectDialog.registration?.customer?.user?.fullName}</strong>:
+          </DialogContentText>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Lý do từ chối"
+            multiline
+            rows={3}
+            value={rejectDialog.reason}
+            onChange={(e) => setRejectDialog({ ...rejectDialog, reason: e.target.value })}
+            required
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseRejectDialog} disabled={processing}>
+            Hủy
+          </Button>
+          <Button 
+            onClick={handleRejectRegistration} 
+            color="error" 
+            variant="contained"
+            disabled={processing || !rejectDialog.reason.trim()}
+          >
+            {processing ? <CircularProgress size={24} color="inherit" /> : 'Từ chối'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Update Sessions Dialog */}
+      <Dialog
+        open={sessionDialog.open}
+        onClose={handleCloseSessionDialog}
+      >
+        <DialogTitle>Cập nhật số buổi hoàn thành</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Cập nhật số buổi đã hoàn thành cho khách hàng{' '}
+            <strong>{sessionDialog.registration?.customer?.user?.fullName}</strong>:
+          </DialogContentText>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Số buổi đã hoàn thành"
+            type="number"
+            value={sessionDialog.sessions}
+            onChange={(e) => setSessionDialog({ 
+              ...sessionDialog, 
+              sessions: Math.max(0, Math.min(parseInt(e.target.value) || 0, sessionDialog.registration?.numberOfSessions || 0)) 
+            })}
+            InputProps={{
+              inputProps: { 
+                min: 0, 
+                max: sessionDialog.registration?.numberOfSessions || 0 
+              }
+            }}
+            helperText={`Tối đa: ${sessionDialog.registration?.numberOfSessions || 0} buổi`}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseSessionDialog} disabled={processing}>
+            Hủy
+          </Button>
+          <Button 
+            onClick={handleUpdateSessions} 
+            color="primary" 
+            variant="contained"
+            disabled={processing}
+          >
+            {processing ? <CircularProgress size={24} color="inherit" /> : 'Cập nhật'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Container>
+  );
+};
+
+// Helper component to render registration list
+const RenderRegistrationList = ({ 
+  registrations, 
+  expandedIds,
+  handleToggleExpand,
+  handleOpenApproveDialog,
+  handleOpenRejectDialog,
+  handleOpenSessionDialog
+}) => {
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatCurrency = (price) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  };
+
+  const getStatusColor = (status) => {
+    const statusMap = {
+      'pending': 'warning',
+      'approved': 'primary',
+      'rejected': 'error',
+      'completed': 'success',
+      'canceled': 'default'
+    };
+    return statusMap[status] || 'default';
+  };
+
+  const getStatusLabel = (status) => {
+    const statusMap = {
+      'pending': 'Chờ xác nhận',
+      'approved': 'Đã xác nhận',
+      'rejected': 'Từ chối',
+      'completed': 'Hoàn thành',
+      'canceled': 'Đã hủy'
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusIcon = (status) => {
+    const statusMap = {
+      'pending': <Schedule fontSize="small" />,
+      'approved': <Check fontSize="small" />,
+      'rejected': <Close fontSize="small" />,
+      'completed': <Check fontSize="small" />,
+      'canceled': <Close fontSize="small" />
+    };
+    return statusMap[status] || null;
+  };
+
+  if (registrations.length === 0) {
+    return (
+      <Box textAlign="center" py={4}>
+        <Typography variant="h6" color="textSecondary" gutterBottom>
+          Không có đăng ký dịch vụ nào trong danh mục này
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Grid container spacing={3}>
+      {registrations.map((registration) => (
+        <Grid item xs={12} key={registration._id}>
+          <Card variant="outlined">
+            <CardContent>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Box display="flex" alignItems="center">
+                  <Avatar
+                    src={registration.customer?.user?.profileImage ? 
+                      `http://localhost:5000${registration.customer.user.profileImage}` : ''}
+                    alt={registration.customer?.user?.fullName}
+                    sx={{ width: 40, height: 40, mr: 2 }}
+                  />
+                  <Box>
+                    <Typography variant="h6">
+                      {registration.customer?.user?.fullName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {registration.customer?.user?.email} | {registration.customer?.user?.phoneNumber}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Chip
+                  icon={getStatusIcon(registration.status)}
+                  label={getStatusLabel(registration.status)}
+                  color={getStatusColor(registration.status)}
+                />
+              </Box>
+
+              <Divider sx={{ mb: 2 }} />
+
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={4}>
+                  <Box display="flex" alignItems="center" mb={2}>
+                    <FitnessCenter sx={{ mr: 1, color: 'text.secondary' }} />
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Dịch vụ
+                      </Typography>
+                      <Typography variant="body1">
+                        {registration.service?.name}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <Box display="flex" alignItems="center" mb={2}>
+                    <Schedule sx={{ mr: 1, color: 'text.secondary' }} />
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Lịch tập
+                      </Typography>
+                      <Typography variant="body1">
+                        {registration.workSchedule?.dayOfWeek && 
+                          `${registration.workSchedule.dayOfWeek}: ${registration.workSchedule.startTime} - ${registration.workSchedule.endTime}`}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <Box display="flex" alignItems="center" mb={2}>
+                    <CalendarMonth sx={{ mr: 1, color: 'text.secondary' }} />
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Thời gian
+                      </Typography>
+                      <Typography variant="body1">
+                        Bắt đầu: {formatDate(registration.startDate)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+
+                {registration.status === 'approved' && (
+                  <Grid item xs={12}>
+                    <Box sx={{ mt: 1 }}>
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography variant="subtitle2" gutterBottom>
+                          Tiến độ:
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {registration.completedSessions}/{registration.numberOfSessions} buổi
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={(registration.completedSessions / registration.numberOfSessions) * 100}
+                        sx={{ height: 10, borderRadius: 5 }}
+                      />
+                    </Box>
+                  </Grid>
+                )}
+              </Grid>
+
+              {/* Expanded content */}
+              {expandedIds.includes(registration._id) && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  
+                  {registration.notes && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Ghi chú từ khách hàng:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                        "{registration.notes}"
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {registration.status === 'rejected' && registration.rejectionReason && (
+                    <Box sx={{ p: 2, bgcolor: '#fff4f4', borderRadius: 1, mb: 2 }}>
+                      <Typography variant="subtitle2" color="error">
+                        Lý do từ chối:
+                      </Typography>
+                      <Typography variant="body2">
+                        {registration.rejectionReason}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle1">
+                      <strong>Tổng chi phí:</strong> {formatCurrency(registration.totalPrice)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Đăng ký lúc: {new Date(registration.createdAt).toLocaleString('vi-VN')}
+                    </Typography>
+                  </Box>
+                </>
+              )}
+            </CardContent>
+
+            <Divider />
+
+            <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
+              <Button
+                startIcon={expandedIds.includes(registration._id) ? <ExpandLess /> : <ExpandMore />}
+                onClick={() => handleToggleExpand(registration._id)}
+              >
+                {expandedIds.includes(registration._id) ? 'Thu gọn' : 'Xem thêm'}
+              </Button>
+
+              <Box>
+                {registration.status === 'pending' && (
+                  <>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleOpenRejectDialog(registration)}
+                      sx={{ mr: 1 }}
+                    >
+                      Từ chối
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => handleOpenApproveDialog(registration)}
+                    >
+                      Xác nhận
+                    </Button>
+                  </>
+                )}
+
+                {registration.status === 'approved' && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<Add />}
+                    onClick={() => handleOpenSessionDialog(registration)}
+                  >
+                    Cập nhật buổi tập
+                  </Button>
+                )}
+              </Box>
+            </CardActions>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  );
+};
+
+export default TrainerRegistrations;

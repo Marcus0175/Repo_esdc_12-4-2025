@@ -350,3 +350,5 @@ const ServiceState = props => {
     </serviceContext.Provider>
   );
 };
+
+export default ServiceState;
