@@ -25,13 +25,16 @@ app.use(express.json());
 // Phục vụ thư mục upload một cách tĩnh
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Routes
+// Add all routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/staff', require('./routes/staff'));
 app.use('/api/equipment', require('./routes/equipment'));
 app.use('/api/maintenance', require('./routes/maintenance'));
-app.use('/api/schedule', require('./routes/schedule')); // Thêm route mới cho lịch làm việc
+app.use('/api/schedule', require('./routes/schedule'));
+app.use('/api/services', require('./routes/services'));
+app.use('/api/service-registrations', require('./routes/serviceRegistrations'));
+app.use('/api/work-schedules', require('./routes/workSchedules'));
 
 // Default route
 app.get('/', (req, res) => {

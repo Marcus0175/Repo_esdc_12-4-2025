@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ScheduleContext from '../../contexts/schedule/scheduleContext';
 import AlertContext from '../../contexts/alert/alertContext';
@@ -13,11 +13,10 @@ import {
   Card,
   CardContent,
   Divider,
-  Chip,
   Avatar,
   CircularProgress
 } from '@mui/material';
-import { ArrowBack, AccessTime, Person } from '@mui/icons-material';
+import { ArrowBack, AccessTime } from '@mui/icons-material';
 
 const TrainerScheduleView = () => {
   const { id } = useParams();
@@ -26,21 +25,14 @@ const TrainerScheduleView = () => {
   const scheduleContext = useContext(ScheduleContext);
   const alertContext = useContext(AlertContext);
   
-  const { getSchedule, schedule, loading, error } = scheduleContext;
+  const { getSchedule, schedule, loading, error, clearSchedule } = scheduleContext;
   const { setAlert } = alertContext;
   
   const [trainer, setTrainer] = useState(null);
   const [loadingTrainer, setLoadingTrainer] = useState(true);
-  const [weekSchedule, setWeekSchedule] = useState({
-    Monday: [],
-    Tuesday: [],
-    Wednesday: [],
-    Thursday: [],
-    Friday: [],
-    Saturday: [],
-    Sunday: []
-  });
+  const [isScheduleLoaded, setIsScheduleLoaded] = useState(false);
   
+  // Fetch trainer data only once when component mounts
   useEffect(() => {
     const fetchTrainerData = async () => {
       try {
@@ -53,48 +45,65 @@ const TrainerScheduleView = () => {
       }
     };
     
-    const fetchSchedule = async () => {
-      try {
-        await getSchedule(id);
-      } catch (err) {
-        setAlert('Không thể tải lịch làm việc', 'error');
-      }
-    };
-    
     fetchTrainerData();
-    fetchSchedule();
     
+    // Cleanup function
+    return () => {
+      clearSchedule();
+    };
     // eslint-disable-next-line
   }, [id]);
   
+  // Fetch schedule data only once
   useEffect(() => {
-    if (schedule && schedule.length > 0) {
-      const organized = {
-        Monday: [],
-        Tuesday: [],
-        Wednesday: [],
-        Thursday: [],
-        Friday: [],
-        Saturday: [],
-        Sunday: []
-      };
+    const fetchSchedule = async () => {
+      if (isScheduleLoaded) return;
       
+      try {
+        await getSchedule(id);
+        setIsScheduleLoaded(true);
+      } catch (err) {
+        setAlert('Không thể tải lịch làm việc', 'error');
+        setIsScheduleLoaded(true);
+      }
+    };
+    
+    if (!loadingTrainer) {
+      fetchSchedule();
+    }
+    
+    // eslint-disable-next-line
+  }, [id, loadingTrainer]);
+  
+  // Organize schedule by day using useMemo to prevent recalculation
+  const weekSchedule = useMemo(() => {
+    const organized = {
+      Monday: [],
+      Tuesday: [],
+      Wednesday: [],
+      Thursday: [],
+      Friday: [],
+      Saturday: [],
+      Sunday: []
+    };
+    
+    if (schedule && schedule.length > 0) {
       schedule.forEach(item => {
         if (organized[item.day]) {
           organized[item.day].push(item);
         }
       });
       
-      // Sắp xếp theo thời gian bắt đầu
+      // Sort by start time
       Object.keys(organized).forEach(day => {
         organized[day].sort((a, b) => a.startTime.localeCompare(b.startTime));
       });
-      
-      setWeekSchedule(organized);
     }
+    
+    return organized;
   }, [schedule]);
   
-  // Chuyển đổi tên ngày tiếng Anh sang tiếng Việt
+  // Translate day names - static function doesn't need to be recreated on render
   const translateDay = (day) => {
     const dayMap = {
       'Monday': 'Thứ Hai',
@@ -109,7 +118,7 @@ const TrainerScheduleView = () => {
     return dayMap[day] || day;
   };
   
-  if (loadingTrainer || loading) {
+  if (loadingTrainer || (loading && !isScheduleLoaded)) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -140,7 +149,7 @@ const TrainerScheduleView = () => {
           <Button
             variant="outlined"
             startIcon={<ArrowBack />}
-            onClick={() => navigate('/trainers')}
+            onClick={() => navigate(-1)}
             sx={{ mr: 2 }}
           >
             Quay lại
@@ -231,4 +240,4 @@ const TrainerScheduleView = () => {
   );
 };
 
-export default TrainerScheduleView;
+export default React.memo(TrainerScheduleView);

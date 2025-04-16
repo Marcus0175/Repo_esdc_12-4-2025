@@ -131,17 +131,37 @@ exports.addScheduleItem = async (req, res) => {
   const { day, startTime, endTime } = req.body;
   
   try {
-    const trainer = await Trainer.findById(req.params.trainerId);
+    console.log('Request params:', req.params);
+    console.log('User ID from token:', req.user.id);
+    console.log('User role:', req.user.role);
+    
+    // Tìm thông tin huấn luyện viên
+    let trainer;
+    
+    // Nếu người dùng là admin hoặc lễ tân, tìm theo trainerId từ params
+    if (req.user.role === 'admin' || req.user.role === 'receptionist') {
+      trainer = await Trainer.findById(req.params.trainerId);
+    } 
+    // Nếu người dùng là huấn luyện viên, tìm theo user ID
+    else if (req.user.role === 'trainer') {
+      trainer = await Trainer.findOne({ user: req.user.id });
+    }
+    
+    console.log('Tìm thấy huấn luyện viên:', trainer);
     
     if (!trainer) {
       return res.status(404).json({ message: 'Không tìm thấy huấn luyện viên' });
     }
     
     // Kiểm tra quyền - chỉ admin hoặc chính huấn luyện viên đó mới có quyền thêm
-    if (req.user.role !== 'admin') {
-      const trainerUser = await Trainer.findOne({ user: req.user.id });
-      
-      if (!trainerUser || trainerUser._id.toString() !== req.params.trainerId) {
+    if (req.user.role !== 'admin' && req.user.role !== 'receptionist') {
+      // Nếu người dùng là huấn luyện viên, kiểm tra xem có phải chính họ không
+      if (req.user.role === 'trainer') {
+        if (trainer.user.toString() !== req.user.id) {
+          return res.status(403).json({ message: 'Không có quyền thêm lịch làm việc' });
+        }
+      } else {
+        // Nếu không phải admin, lễ tân hay huấn luyện viên thì không có quyền
         return res.status(403).json({ message: 'Không có quyền thêm lịch làm việc' });
       }
     }
@@ -175,7 +195,7 @@ exports.addScheduleItem = async (req, res) => {
       scheduleItem: trainer.availability[trainer.availability.length - 1] 
     });
   } catch (err) {
-    console.error(err.message);
+    console.error('Lỗi trong addScheduleItem:', err);
     
     if (err.kind === 'ObjectId') {
       return res.status(404).json({ message: 'Không tìm thấy huấn luyện viên' });

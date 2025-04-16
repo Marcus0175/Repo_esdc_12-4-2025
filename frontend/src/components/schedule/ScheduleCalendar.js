@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import ScheduleContext from '../../contexts/schedule/scheduleContext';
 import AuthContext from '../../contexts/auth/authContext';
 import AlertContext from '../../contexts/alert/alertContext';
@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   Divider,
-  Chip,
   Button,
   CircularProgress
 } from '@mui/material';
@@ -27,22 +26,18 @@ const ScheduleCalendar = () => {
   const { user } = authContext;
   const { setAlert } = alertContext;
   
-  const [weekSchedule, setWeekSchedule] = useState({
-    Monday: [],
-    Tuesday: [],
-    Wednesday: [],
-    Thursday: [],
-    Friday: [],
-    Saturday: [],
-    Sunday: []
-  });
+  const [isLoaded, setIsLoaded] = useState(false);
   
   useEffect(() => {
     const loadSchedule = async () => {
+      if (isLoaded) return;
+      
       try {
         await getMySchedule();
+        setIsLoaded(true);
       } catch (err) {
         setAlert('Không thể tải lịch làm việc', 'error');
+        setIsLoaded(true);
       }
     };
     
@@ -56,34 +51,35 @@ const ScheduleCalendar = () => {
     // eslint-disable-next-line
   }, [user]);
   
-  useEffect(() => {
+  // Organize schedule items by day of week - do this once with useMemo
+  const weekSchedule = useMemo(() => {
+    const organized = {
+      Monday: [],
+      Tuesday: [],
+      Wednesday: [],
+      Thursday: [],
+      Friday: [],
+      Saturday: [],
+      Sunday: []
+    };
+    
     if (schedule && schedule.length > 0) {
-      const organized = {
-        Monday: [],
-        Tuesday: [],
-        Wednesday: [],
-        Thursday: [],
-        Friday: [],
-        Saturday: [],
-        Sunday: []
-      };
-      
       schedule.forEach(item => {
         if (organized[item.day]) {
           organized[item.day].push(item);
         }
       });
       
-      // Sắp xếp theo thời gian bắt đầu
+      // Sort by start time
       Object.keys(organized).forEach(day => {
         organized[day].sort((a, b) => a.startTime.localeCompare(b.startTime));
       });
-      
-      setWeekSchedule(organized);
     }
+    
+    return organized;
   }, [schedule]);
   
-  // Chuyển đổi tên ngày tiếng Anh sang tiếng Việt
+  // Translate English day names to Vietnamese
   const translateDay = (day) => {
     const dayMap = {
       'Monday': 'Thứ Hai',
@@ -98,7 +94,7 @@ const ScheduleCalendar = () => {
     return dayMap[day] || day;
   };
   
-  if (loading) {
+  if (loading && !isLoaded) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
         <CircularProgress />
@@ -203,4 +199,4 @@ const ScheduleCalendar = () => {
   );
 };
 
-export default ScheduleCalendar;
+export default React.memo(ScheduleCalendar);

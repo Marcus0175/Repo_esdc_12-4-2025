@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useCallback } from 'react';
 import ScheduleContext from '../../contexts/schedule/scheduleContext';
 import AlertContext from '../../contexts/alert/alertContext';
 import {
@@ -19,10 +19,10 @@ import {
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
 import viLocale from 'date-fns/locale/vi';
 
-const ScheduleForm = ({ open, handleClose, trainerId, isMySchedule }) => {
+const ScheduleForm = ({ open, handleClose, trainerId, isMySchedule, onSuccess }) => {
   const scheduleContext = useContext(ScheduleContext);
   const alertContext = useContext(AlertContext);
   
@@ -40,49 +40,46 @@ const ScheduleForm = ({ open, handleClose, trainerId, isMySchedule }) => {
   
   const { day, startTime, endTime } = formData;
   
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleInputChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value
+    }));
     
-    // Xóa lỗi khi người dùng thay đổi trường
-    if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: null
-      });
-    }
-  };
+    // Xóa lỗi cho trường này
+    setErrors(prevErrors => ({
+      ...prevErrors,
+      [name]: null
+    }));
+  }, []);
   
-  const handleTimeChange = (name, time) => {
-    setFormData({
-      ...formData,
+  const handleTimeChange = useCallback((name, time) => {
+    setFormData(prevData => ({
+      ...prevData,
       [name]: time
-    });
+    }));
     
-    // Xóa lỗi khi người dùng thay đổi trường
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: null
-      });
-    }
-  };
+    // Xóa lỗi cho trường này
+    setErrors(prevErrors => ({
+      ...prevErrors,
+      [name]: null
+    }));
+  }, []);
   
   const validateForm = () => {
-    const errors = {};
+    const newErrors = {};
     
     if (!day) {
-      errors.day = 'Vui lòng chọn ngày trong tuần';
+      newErrors.day = 'Vui lòng chọn ngày trong tuần';
     }
     
     if (!startTime) {
-      errors.startTime = 'Vui lòng chọn thời gian bắt đầu';
+      newErrors.startTime = 'Vui lòng chọn thời gian bắt đầu';
     }
     
     if (!endTime) {
-      errors.endTime = 'Vui lòng chọn thời gian kết thúc';
+      newErrors.endTime = 'Vui lòng chọn thời gian kết thúc';
     }
     
     if (startTime && endTime) {
@@ -91,12 +88,12 @@ const ScheduleForm = ({ open, handleClose, trainerId, isMySchedule }) => {
       const end = new Date(endTime);
       
       if (start >= end) {
-        errors.endTime = 'Thời gian kết thúc phải sau thời gian bắt đầu';
+        newErrors.endTime = 'Thời gian kết thúc phải sau thời gian bắt đầu';
       }
     }
     
-    setErrors(errors);
-    return Object.keys(errors).length === 0;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
   
   const handleSubmit = async () => {
@@ -111,6 +108,9 @@ const ScheduleForm = ({ open, handleClose, trainerId, isMySchedule }) => {
       const formattedStartTime = format(new Date(startTime), 'HH:mm');
       const formattedEndTime = format(new Date(endTime), 'HH:mm');
       
+      console.log('trainerId:', trainerId);
+      console.log('Sending schedule data:', {day, startTime: formattedStartTime, endTime: formattedEndTime});
+      
       const scheduleData = {
         day,
         startTime: formattedStartTime,
@@ -120,15 +120,15 @@ const ScheduleForm = ({ open, handleClose, trainerId, isMySchedule }) => {
       await addScheduleItem(trainerId, scheduleData);
       
       setAlert('Thêm lịch làm việc thành công', 'success');
+      resetForm();
       handleClose();
       
-      // Reset form
-      setFormData({
-        day: '',
-        startTime: null,
-        endTime: null
-      });
+      // Thông báo cho component cha rằng lịch đã được thêm thành công
+      if (onSuccess && typeof onSuccess === 'function') {
+        onSuccess();
+      }
     } catch (err) {
+      console.error('Error adding schedule:', err);
       setAlert(err.response?.data?.message || 'Lỗi khi thêm lịch làm việc', 'error');
     } finally {
       setSubmitting(false);
@@ -150,7 +150,12 @@ const ScheduleForm = ({ open, handleClose, trainerId, isMySchedule }) => {
   };
   
   return (
-    <Dialog open={open} onClose={handleDialogClose} maxWidth="md">
+    <Dialog 
+      open={open} 
+      onClose={handleDialogClose} 
+      maxWidth="md"
+      disableScrollLock
+    >
       <DialogTitle>
         Thêm lịch làm việc mới
       </DialogTitle>
@@ -240,4 +245,4 @@ const ScheduleForm = ({ open, handleClose, trainerId, isMySchedule }) => {
   );
 };
 
-export default ScheduleForm;
+export default React.memo(ScheduleForm);

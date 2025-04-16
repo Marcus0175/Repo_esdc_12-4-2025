@@ -58,9 +58,13 @@ const ScheduleList = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [isMySchedule, setIsMySchedule] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    // Only fetch schedule data when the component mounts or id changes
     const loadSchedule = async () => {
+      if (isLoaded) return;
+      
       try {
         if (id) {
           await getSchedule(id);
@@ -69,13 +73,16 @@ const ScheduleList = () => {
           await getMySchedule();
           setIsMySchedule(true);
         }
+        setIsLoaded(true);
       } catch (err) {
         console.error('Error loading schedule:', err);
+        setIsLoaded(true);
       }
     };
 
     loadSchedule();
 
+    // Cleanup function
     return () => {
       clearSchedule();
     };
@@ -149,7 +156,7 @@ const ScheduleList = () => {
     return dayMap[day] || day;
   };
 
-  if (loading) {
+  if (loading && !isLoaded) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -273,6 +280,7 @@ const ScheduleList = () => {
         handleClose={handleCloseForm} 
         trainerId={isMySchedule ? trainerId : id}
         isMySchedule={isMySchedule}
+        onSuccess={() => setIsLoaded(false)}
       />
     </Container>
   );

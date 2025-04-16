@@ -1,4 +1,4 @@
-import React, { useReducer } from 'react';
+import React, { useReducer, useCallback } from 'react';
 import scheduleContext from './scheduleContext';
 import scheduleReducer from './scheduleReducer';
 import api from '../../utils/api';
@@ -23,13 +23,13 @@ const ScheduleState = props => {
 
   const [state, dispatch] = useReducer(scheduleReducer, initialState);
 
-  // Set loading
-  const setLoading = () => {
+  // Set loading - memoized to prevent recreation on each render
+  const setLoading = useCallback(() => {
     dispatch({ type: SET_LOADING });
-  };
+  }, []);
 
-  // Lấy lịch làm việc của huấn luyện viên
-  const getSchedule = async (trainerId) => {
+  // Get trainer's work schedule
+  const getSchedule = useCallback(async (trainerId) => {
     setLoading();
     
     try {
@@ -37,7 +37,10 @@ const ScheduleState = props => {
       
       dispatch({
         type: GET_SCHEDULE,
-        payload: { schedule: res.data.schedule, trainerId }
+        payload: { 
+          schedule: res.data.schedule || [], 
+          trainerId 
+        }
       });
 
       return res.data.schedule;
@@ -48,10 +51,10 @@ const ScheduleState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
-  // Lấy lịch làm việc của huấn luyện viên đang đăng nhập
-  const getMySchedule = async () => {
+  // Get logged-in trainer's schedule
+  const getMySchedule = useCallback(async () => {
     setLoading();
     
     try {
@@ -59,7 +62,10 @@ const ScheduleState = props => {
       
       dispatch({
         type: GET_SCHEDULE,
-        payload: { schedule: res.data.schedule, trainerId: 'me' }
+        payload: { 
+          schedule: res.data.schedule || [], 
+          trainerId: 'me' 
+        }
       });
 
       return res.data.schedule;
@@ -70,10 +76,10 @@ const ScheduleState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
-  // Cập nhật toàn bộ lịch làm việc
-  const updateSchedule = async (trainerId, schedule) => {
+  // Update entire schedule
+  const updateSchedule = useCallback(async (trainerId, schedule) => {
     setLoading();
     
     try {
@@ -81,7 +87,7 @@ const ScheduleState = props => {
       
       dispatch({
         type: UPDATE_SCHEDULE,
-        payload: { schedule: res.data.schedule }
+        payload: { schedule: res.data.schedule || [] }
       });
 
       return res.data.schedule;
@@ -92,32 +98,37 @@ const ScheduleState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
-  // Thêm lịch làm việc mới
-  const addScheduleItem = async (trainerId, scheduleItem) => {
-    setLoading();
+  // Sửa hàm addScheduleItem
+const addScheduleItem = async (trainerId, scheduleItem) => {
+  setLoading();
+  
+  try {
+    // Log để debug
+    console.log('Sending to API:', trainerId, scheduleItem);
     
-    try {
-      const res = await api.post(`/schedule/${trainerId}`, scheduleItem);
-      
-      dispatch({
-        type: ADD_SCHEDULE_ITEM,
-        payload: { scheduleItem: res.data.scheduleItem }
-      });
+    const res = await api.post(`/schedule/${trainerId}`, scheduleItem);
+    
+    dispatch({
+      type: ADD_SCHEDULE_ITEM,
+      payload: { scheduleItem: res.data.scheduleItem }
+    });
 
-      return res.data.scheduleItem;
-    } catch (err) {
-      dispatch({
-        type: SCHEDULE_ERROR,
-        payload: err.response?.data?.message || 'Lỗi khi thêm lịch làm việc'
-      });
-      throw err;
-    }
-  };
+    return res.data.scheduleItem;
+  } catch (err) {
+    console.error('Error in addScheduleItem:', err.response?.data || err);
+    
+    dispatch({
+      type: SCHEDULE_ERROR,
+      payload: err.response?.data?.message || 'Lỗi khi thêm lịch làm việc'
+    });
+    throw err;
+  }
+};
 
-  // Xóa lịch làm việc
-  const deleteScheduleItem = async (trainerId, scheduleId) => {
+  // Delete schedule item
+  const deleteScheduleItem = useCallback(async (trainerId, scheduleId) => {
     setLoading();
     
     try {
@@ -134,17 +145,17 @@ const ScheduleState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
-  // Xóa lịch làm việc hiện tại
-  const clearSchedule = () => {
+  // Clear current schedule
+  const clearSchedule = useCallback(() => {
     dispatch({ type: CLEAR_SCHEDULE });
-  };
+  }, []);
 
-  // Xóa lỗi
-  const clearErrors = () => {
+  // Clear errors
+  const clearErrors = useCallback(() => {
     dispatch({ type: CLEAR_ERRORS });
-  };
+  }, []);
 
   return (
     <scheduleContext.Provider

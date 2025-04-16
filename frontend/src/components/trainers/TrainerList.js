@@ -30,13 +30,12 @@ import {
 } from '@mui/material';
 import {
   Edit,
-  Delete,
   Search,
   Add,
-  Person,
   Block,
   CheckCircle,
-  Schedule
+  Schedule,
+  Person
 } from '@mui/icons-material';
 
 const TrainerList = () => {
@@ -171,62 +170,6 @@ const TrainerList = () => {
           }}
         />
 
-{isCustomer && (
-                        <>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Person />}
-                            component={Link}
-                            to={`/trainers/${trainers._id}`}
-                            sx={{ mr: 1 }}
-                          >
-                            Xem chi tiết
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            color="secondary"
-                            startIcon={<Schedule />}
-                            component={Link}
-                            to={`/trainers/${trainers._id}/schedule`}
-                          >
-                            Lịch làm việc
-                          </Button>
-                        </>
-                      )}
-        
-
-        <IconButton
-                            color="primary"
-                            component={Link}
-                            to={`/trainers/edit/${trainers._id}`}
-                          >
-                            <Edit />
-                          </IconButton>
-                          {trainers.user?.active ? (
-                            <IconButton
-                              color="error"
-                              onClick={() => handleOpenDialog(trainers, 'deactivate')}
-                            >
-                              <Block />
-                            </IconButton>
-                          ) : (
-                            <IconButton
-                              color="success"
-                              onClick={() => handleOpenDialog(trainers, 'activate')}
-                            >
-                              <CheckCircle />
-                            </IconButton>
-                          )}
-                          <IconButton
-                            color="secondary"
-                            component={Link}
-                            to={`/trainers/${trainers._id}/schedule`}
-                            title="Xem lịch làm việc"
-                          >
-                            <Schedule />
-                          </IconButton>
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
             <CircularProgress />
@@ -294,44 +237,61 @@ const TrainerList = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      {canManageTrainers && (
-                        <>
-                          <IconButton
-                            color="primary"
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {canManageTrainers && (
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <IconButton
+                              color="primary"
+                              component={Link}
+                              to={`/trainers/edit/${trainer._id}`}
+                              size="small"
+                            >
+                              <Edit />
+                            </IconButton>
+                            {trainer.user?.active ? (
+                              <IconButton
+                                color="error"
+                                onClick={() => handleOpenDialog(trainer, 'deactivate')}
+                                size="small"
+                              >
+                                <Block />
+                              </IconButton>
+                            ) : (
+                              <IconButton
+                                color="success"
+                                onClick={() => handleOpenDialog(trainer, 'activate')}
+                                size="small"
+                              >
+                                <CheckCircle />
+                              </IconButton>
+                            )}
+                          </Box>
+                        )}
+                        
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Person />}
                             component={Link}
-                            to={`/trainers/edit/${trainer._id}`}
+                            to={`/trainers/${trainer._id}`}
+                            sx={{ fontSize: '0.7rem', py: 0.5 }}
                           >
-                            <Edit />
-                          </IconButton>
-                          {trainer.user?.active ? (
-                            <IconButton
-                              color="error"
-                              onClick={() => handleOpenDialog(trainer, 'deactivate')}
-                            >
-                              <Block />
-                            </IconButton>
-                          ) : (
-                            <IconButton
-                              color="success"
-                              onClick={() => handleOpenDialog(trainer, 'activate')}
-                            >
-                              <CheckCircle />
-                            </IconButton>
-                          )}
-                        </>
-                      )}
-                      
-                      {isCustomer && (
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<Person />}
-                          component={Link}
-                          to={`/trainers/${trainer._id}`}
-                        >
-                          Xem chi tiết
-                        </Button>
-                      )}
+                            Chi tiết
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="secondary"
+                            startIcon={<Schedule />}
+                            component={Link}
+                            to={`/trainers/${trainer._id}/schedule`}
+                            sx={{ fontSize: '0.7rem', py: 0.5 }}
+                          >
+                            Lịch
+                          </Button>
+                        </Box>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
