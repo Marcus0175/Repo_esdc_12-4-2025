@@ -17,12 +17,16 @@ import EquipmentForm from './components/equipment/EquipmentForm';
 import EquipmentDetail from './components/equipment/EquipmentDetail';
 import MaintenanceList from './components/maintenance/MaintenanceList';
 import MaintenanceForm from './components/maintenance/MaintenanceForm';
+import ScheduleList from './components/schedule/ScheduleList';
+import ScheduleCalendar from './components/schedule/ScheduleCalendar';
 import PrivateRoute from './components/common/PrivateRoute';
 import AuthContext from './contexts/auth/authContext';
-
+import TrainerScheduleView from './components/trainers/TrainerScheduleView';
+import TrainerDetail from './components/trainers/TrainerDetail';
 import AuthState from './contexts/auth/AuthState';
 import AlertState from './contexts/alert/AlertState';
 import EquipmentState from './contexts/equipment/EquipmentState';
+import ScheduleState from './contexts/schedule/ScheduleState';
 
 const AppContent = () => {
   const authContext = useContext(AuthContext);
@@ -223,6 +227,54 @@ const AppContent = () => {
             }
           />
           
+          {/* Schedule Management Routes */}
+          <Route
+            path="/schedule"
+            element={
+              <PrivateRoute
+                component={ScheduleList}
+                roles={['admin', 'trainer']}
+              />
+            }
+          />
+          <Route
+            path="/schedule/:id"
+            element={
+              <PrivateRoute
+                component={ScheduleList}
+                roles={['admin', 'receptionist', 'trainer']}
+              />
+            }
+          />
+          <Route
+            path="/my-schedule"
+            element={
+              <PrivateRoute
+                component={ScheduleCalendar}
+                roles={['trainer']}
+              />
+            }
+          />
+
+<Route
+            path="/trainers/:id"
+            element={
+              <PrivateRoute
+                component={TrainerDetail}
+                roles={['admin', 'receptionist', 'customer']}
+              />
+            }
+          />
+          <Route
+            path="/trainers/:id/schedule"
+            element={
+              <PrivateRoute
+                component={TrainerScheduleView}
+                roles={['admin', 'receptionist', 'customer', 'trainer']}
+              />
+            }
+          />
+          
           {/* Redirect */}
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
@@ -248,12 +300,14 @@ const App = () => {
     <AuthState>
       <AlertState>
         <EquipmentState>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Router>
-              <AppContent />
-            </Router>
-          </ThemeProvider>
+          <ScheduleState>
+            <ThemeProvider theme={theme}>
+              <CssBaseline />
+              <Router>
+                <AppContent />
+              </Router>
+            </ThemeProvider>
+          </ScheduleState>
         </EquipmentState>
       </AlertState>
     </AuthState>

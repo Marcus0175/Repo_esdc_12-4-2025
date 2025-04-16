@@ -173,11 +173,13 @@ exports.updateMaintenance = async (req, res) => {
       { new: true }
     );
 
-    // If maintenance record is being marked as completed, update the equipment record too
-    if (status === 'completed' && completedDate && (maintenance.status !== 'completed' || !maintenance.completedDate)) {
+    // If maintenance record is being marked as completed with a completion date, 
+    // always update the equipment record regardless of previous status
+    if (status === 'completed' && completedDate) {
       const equipment = await Equipment.findById(maintenance.equipment);
       
       if (equipment) {
+        // Always update the last maintenance date when a maintenance record is completed
         equipment.lastMaintenanceDate = completedDate;
         
         // Schedule next maintenance in 90 days by default

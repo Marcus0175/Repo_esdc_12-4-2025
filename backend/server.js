@@ -31,6 +31,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/staff', require('./routes/staff'));
 app.use('/api/equipment', require('./routes/equipment'));
 app.use('/api/maintenance', require('./routes/maintenance'));
+app.use('/api/schedule', require('./routes/schedule')); // Thêm route mới cho lịch làm việc
 
 // Default route
 app.get('/', (req, res) => {

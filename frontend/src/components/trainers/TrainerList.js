@@ -35,7 +35,8 @@ import {
   Add,
   Person,
   Block,
-  CheckCircle
+  CheckCircle,
+  Schedule
 } from '@mui/icons-material';
 
 const TrainerList = () => {
@@ -170,6 +171,62 @@ const TrainerList = () => {
           }}
         />
 
+{isCustomer && (
+                        <>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Person />}
+                            component={Link}
+                            to={`/trainers/${trainers._id}`}
+                            sx={{ mr: 1 }}
+                          >
+                            Xem chi tiết
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="secondary"
+                            startIcon={<Schedule />}
+                            component={Link}
+                            to={`/trainers/${trainers._id}/schedule`}
+                          >
+                            Lịch làm việc
+                          </Button>
+                        </>
+                      )}
+        
+
+        <IconButton
+                            color="primary"
+                            component={Link}
+                            to={`/trainers/edit/${trainers._id}`}
+                          >
+                            <Edit />
+                          </IconButton>
+                          {trainers.user?.active ? (
+                            <IconButton
+                              color="error"
+                              onClick={() => handleOpenDialog(trainers, 'deactivate')}
+                            >
+                              <Block />
+                            </IconButton>
+                          ) : (
+                            <IconButton
+                              color="success"
+                              onClick={() => handleOpenDialog(trainers, 'activate')}
+                            >
+                              <CheckCircle />
+                            </IconButton>
+                          )}
+                          <IconButton
+                            color="secondary"
+                            component={Link}
+                            to={`/trainers/${trainers._id}/schedule`}
+                            title="Xem lịch làm việc"
+                          >
+                            <Schedule />
+                          </IconButton>
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
             <CircularProgress />

@@ -16,7 +16,6 @@ import {
 import {
   Person,
   FitnessCenter,
-  Group,
   AdminPanelSettings,
   Dashboard as DashboardIcon,
   People,
@@ -24,8 +23,10 @@ import {
   List as ListIcon,
   Build,
   Schedule,
+  Schedule as ScheduleIcon,
   Handyman
 } from '@mui/icons-material';
+
 
 const SIDEBAR_WIDTH = 280;
 
@@ -159,6 +160,40 @@ const Dashboard = () => {
                 <Schedule />
               </ListItemIcon>
               <ListItemText primary="Lịch bảo trì" />
+            </ListItemButton>
+          </>
+        )}
+
+
+        {/* Quản lý lịch làm việc - dành cho huấn luyện viên */}
+        {user?.role === 'trainer' && (
+          <>
+            <Box sx={{ p: 2, pt: 3 }}>
+              <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                QUẢN LÝ LỊCH LÀM VIỆC
+              </Typography>
+            </Box>
+            
+            <ListItemButton 
+              component={Link} 
+              to="/my-schedule"
+              selected={window.location.pathname === '/my-schedule'}
+            >
+              <ListItemIcon>
+                <Schedule />
+              </ListItemIcon>
+              <ListItemText primary="Xem lịch làm việc" />
+            </ListItemButton>
+            
+            <ListItemButton 
+              component={Link} 
+              to="/schedule"
+              selected={window.location.pathname === '/schedule'}
+            >
+              <ListItemIcon>
+                <ScheduleIcon />
+              </ListItemIcon>
+              <ListItemText primary="Quản lý lịch làm việc" />
             </ListItemButton>
           </>
         )}
@@ -598,7 +633,7 @@ const Dashboard = () => {
 
   const renderTrainerDashboard = () => (
     <Grid container spacing={4}>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12} md={4}>
         <Paper
           sx={{
             p: 3,
@@ -633,7 +668,42 @@ const Dashboard = () => {
         </Paper>
       </Grid>
 
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12} md={4}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #7b1fa2 0%, #ba68c8 100%)',
+            color: 'white'
+          }}
+        >
+          <Schedule sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Lịch làm việc
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Quản lý lịch làm việc và giờ dạy của bạn
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/my-schedule"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem lịch làm việc
+          </Button>
+        </Paper>
+      </Grid>
+
+      <Grid item xs={12} md={4}>
         <Paper
           sx={{
             p: 3,

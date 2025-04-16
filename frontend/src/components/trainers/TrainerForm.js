@@ -14,10 +14,28 @@ import {
   CircularProgress,
   Chip,
   Autocomplete,
-  Avatar
+  Avatar,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  IconButton
 } from '@mui/material';
-import { Save, ArrowBack, Add, Delete, PhotoCamera } from '@mui/icons-material';
+import { 
+  Save, 
+  ArrowBack, 
+  Add, 
+  Delete, 
+  PhotoCamera,
+  Schedule,
+  AccessTime
+} from '@mui/icons-material';
 import ProfileImageUpload from '../common/ProfileImageUpload';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { format, parse } from 'date-fns';
+import viLocale from 'date-fns/locale/vi';
 
 const TrainerForm = () => {
   const alertContext = useContext(AlertContext);
@@ -37,6 +55,14 @@ const TrainerForm = () => {
     experience: 0,
     certifications: [],
     availability: []
+  });
+  
+  // State riêng cho lịch làm việc
+  const [scheduleItems, setScheduleItems] = useState([]);
+  const [newScheduleItem, setNewScheduleItem] = useState({
+    day: '',
+    startTime: null,
+    endTime: null
   });
 
   const [loading, setLoading] = useState(isEditMode);
@@ -74,6 +100,11 @@ const TrainerForm = () => {
             certifications: trainer.certifications || [],
             availability: trainer.availability || []
           });
+          
+          // Đồng bộ state scheduleItems với availability từ API
+          if (trainer.availability && trainer.availability.length > 0) {
+            setScheduleItems(trainer.availability);
+          }
           
           // Lưu ảnh đại diện nếu có
           if (trainer.user.profileImage) {
@@ -182,6 +213,103 @@ const TrainerForm = () => {
   // Xử lý khi tải lên ảnh thành công (chỉ trong edit mode)
   const handleImageUpload = (imageUrl) => {
     setProfileImage(`http://localhost:5000${imageUrl}`);
+  };
+
+  // Xử lý lịch làm việc
+  const handleScheduleInputChange = (field, value) => {
+    setNewScheduleItem({
+      ...newScheduleItem,
+      [field]: value
+    });
+  };
+
+  const handleTimeChange = (field, time) => {
+    setNewScheduleItem({
+      ...newScheduleItem,
+      [field]: time
+    });
+  };
+
+  const addScheduleItem = () => {
+    const { day, startTime, endTime } = newScheduleItem;
+    
+    if (!day || !startTime || !endTime) {
+      setAlert('Vui lòng điền đầy đủ thông tin lịch làm việc', 'error');
+      return;
+    }
+    
+    // Kiểm tra thời gian bắt đầu phải trước thời gian kết thúc
+    if (startTime >= endTime) {
+      setAlert('Thời gian kết thúc phải sau thời gian bắt đầu', 'error');
+      return;
+    }
+    
+    // Format thời gian thành chuỗi HH:mm
+    const formattedStartTime = format(new Date(startTime), 'HH:mm');
+    const formattedEndTime = format(new Date(endTime), 'HH:mm');
+    
+    // Kiểm tra xung đột lịch
+    const conflict = scheduleItems.some(item => 
+      item.day === day && 
+      ((formattedStartTime >= item.startTime && formattedStartTime < item.endTime) ||
+       (formattedEndTime > item.startTime && formattedEndTime <= item.endTime) ||
+       (formattedStartTime <= item.startTime && formattedEndTime >= item.endTime))
+    );
+    
+    if (conflict) {
+      setAlert('Lịch làm việc xung đột với lịch đã có', 'error');
+      return;
+    }
+    
+    const newItem = {
+      day,
+      startTime: formattedStartTime,
+      endTime: formattedEndTime,
+      _id: Date.now() // ID tạm thời cho việc xóa
+    };
+    
+    const updatedScheduleItems = [...scheduleItems, newItem];
+    setScheduleItems(updatedScheduleItems);
+    
+    // Cập nhật vào formData
+    setFormData({
+      ...formData,
+      availability: updatedScheduleItems
+    });
+    
+    // Reset form
+    setNewScheduleItem({
+      day: '',
+      startTime: null,
+      endTime: null
+    });
+  };
+
+  const removeScheduleItem = (index) => {
+    const updatedItems = [...scheduleItems];
+    updatedItems.splice(index, 1);
+    setScheduleItems(updatedItems);
+    
+    // Cập nhật vào formData
+    setFormData({
+      ...formData,
+      availability: updatedItems
+    });
+  };
+
+  // Chuyển đổi tên ngày tiếng Anh sang tiếng Việt
+  const translateDay = (day) => {
+    const dayMap = {
+      'Monday': 'Thứ Hai',
+      'Tuesday': 'Thứ Ba',
+      'Wednesday': 'Thứ Tư',
+      'Thursday': 'Thứ Năm',
+      'Friday': 'Thứ Sáu',
+      'Saturday': 'Thứ Bảy',
+      'Sunday': 'Chủ Nhật'
+    };
+    
+    return dayMap[day] || day;
   };
 
   const onSubmit = async e => {
@@ -542,6 +670,127 @@ const TrainerForm = () => {
               )}
             </Grid>
 
+            {/* Phần lịch làm việc */}
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                Lịch làm việc
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Box sx={{ mb: 2 }}>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={12} md={3}>
+                    <FormControl fullWidth>
+                      <InputLabel id="day-select-label">Ngày trong tuần</InputLabel>
+                      <Select
+                        labelId="day-select-label"
+                        value={newScheduleItem.day}
+                        label="Ngày trong tuần"
+                        onChange={(e) => handleScheduleInputChange('day', e.target.value)}
+                      >
+                        <MenuItem value="Monday">Thứ Hai</MenuItem>
+                        <MenuItem value="Tuesday">Thứ Ba</MenuItem>
+                        <MenuItem value="Wednesday">Thứ Tư</MenuItem>
+                        <MenuItem value="Thursday">Thứ Năm</MenuItem>
+                        <MenuItem value="Friday">Thứ Sáu</MenuItem>
+                        <MenuItem value="Saturday">Thứ Bảy</MenuItem>
+                        <MenuItem value="Sunday">Chủ Nhật</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={3}>
+                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={viLocale}>
+                      <TimePicker
+                        label="Thời gian bắt đầu"
+                        value={newScheduleItem.startTime}
+                        onChange={(newTime) => handleTimeChange('startTime', newTime)}
+                        renderInput={(params) => <TextField {...params} fullWidth />}
+                        ampm={false}
+                        minutesStep={5}
+                      />
+                    </LocalizationProvider>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={3}>
+                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={viLocale}>
+                      <TimePicker
+                        label="Thời gian kết thúc"
+                        value={newScheduleItem.endTime}
+                        onChange={(newTime) => handleTimeChange('endTime', newTime)}
+                        renderInput={(params) => <TextField {...params} fullWidth />}
+                        ampm={false}
+                        minutesStep={5}
+                      />
+                    </LocalizationProvider>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={3}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="primary"
+                      onClick={addScheduleItem}
+                      startIcon={<Add />}
+                      sx={{ height: '56px' }}
+                    >
+                      Thêm lịch
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              {scheduleItems.length > 0 ? (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Danh sách lịch làm việc
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {scheduleItems.map((item, index) => (
+                      <Grid item xs={12} md={6} lg={4} key={index}>
+                        <Box 
+                          sx={{ 
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            p: 2,
+                            border: '1px solid #e0e0e0',
+                            borderRadius: 1,
+                            backgroundColor: 'rgba(25, 118, 210, 0.05)'
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <AccessTime sx={{ mr: 1, color: 'primary.main' }} />
+                            <Box>
+                              <Typography variant="subtitle1">
+                                {translateDay(item.day)}
+                              </Typography>
+                              <Typography variant="body2">
+                                {item.startTime} - {item.endTime}
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <IconButton 
+                            color="error" 
+                            onClick={() => removeScheduleItem(index)}
+                            size="small"
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Box>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              ) : (
+                <Typography color="textSecondary">
+                  Chưa có lịch làm việc nào được thêm
+                </Typography>
+              )}
+            </Grid>
+
             <Grid item xs={12}>
               <Box display="flex" justifyContent="flex-end">
                 <Button
@@ -567,4 +816,4 @@ const TrainerForm = () => {
   );
 };
 
-export default TrainerForm; 
+export default TrainerForm;
