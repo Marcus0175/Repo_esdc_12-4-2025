@@ -1,4 +1,4 @@
-import React, { useReducer } from 'react';
+import React, { useReducer, useCallback } from 'react';
 import serviceContext from './serviceContext';
 import serviceReducer from './serviceReducer';
 import api from '../../utils/api';
@@ -38,12 +38,12 @@ const ServiceState = props => {
   const [state, dispatch] = useReducer(serviceReducer, initialState);
 
   // Set loading
-  const setLoading = () => {
+  const setLoading = useCallback(() => {
     dispatch({ type: SET_LOADING });
-  };
+  }, []);
 
   // Get all services with optional filters
-  const getServices = async (filters = {}) => {
+  const getServices = useCallback(async (filters = {}) => {
     setLoading();
     
     try {
@@ -57,7 +57,9 @@ const ServiceState = props => {
       const queryString = queryParams.toString();
       const url = queryString ? `/services?${queryString}` : '/services';
       
+      console.log("ServiceState: Fetching services from URL:", url);
       const res = await api.get(url);
+      console.log("ServiceState: Got services:", res.data);
       
       dispatch({
         type: GET_SERVICES,
@@ -66,16 +68,17 @@ const ServiceState = props => {
       
       return res.data;
     } catch (err) {
+      console.error("ServiceState: Error fetching services:", err);
       dispatch({
         type: SERVICE_ERROR,
         payload: err.response?.data?.message || 'Lỗi khi tải danh sách dịch vụ'
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
   // Get service by ID
-  const getService = async (id) => {
+  const getService = useCallback(async (id) => {
     setLoading();
     
     try {
@@ -94,10 +97,10 @@ const ServiceState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
   // Get trainer services
-  const getTrainerServices = async (trainerId) => {
+  const getTrainerServices = useCallback(async (trainerId) => {
     setLoading();
     
     try {
@@ -116,32 +119,37 @@ const ServiceState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
   // Add service (admin or trainer)
-  const addService = async (serviceData) => {
+  const addService = useCallback(async (serviceData) => {
     setLoading();
     
     try {
+      console.log("ServiceState: Adding service with data:", serviceData);
       const res = await api.post('/services', serviceData);
+      console.log("ServiceState: Service added successfully, response:", res.data);
       
+      // Update state with new service
       dispatch({
         type: ADD_SERVICE,
         payload: res.data
       });
       
+      // Return the newly created service
       return res.data;
     } catch (err) {
+      console.error("ServiceState: Error adding service:", err);
       dispatch({
         type: SERVICE_ERROR,
         payload: err.response?.data?.message || 'Lỗi khi thêm dịch vụ'
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
-  // Update service (admin only)
-  const updateService = async (id, serviceData) => {
+  // Update service (admin or trainer)
+  const updateService = useCallback(async (id, serviceData) => {
     setLoading();
     
     try {
@@ -160,10 +168,10 @@ const ServiceState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
-  // Delete service (admin only)
-  const deleteService = async (id) => {
+  // Delete service (admin or trainer)
+  const deleteService = useCallback(async (id) => {
     setLoading();
     
     try {
@@ -180,15 +188,15 @@ const ServiceState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
   // Clear current service
-  const clearService = () => {
+  const clearService = useCallback(() => {
     dispatch({ type: CLEAR_SERVICE });
-  };
+  }, []);
 
   // Get all registrations (admin, receptionist)
-  const getRegistrations = async () => {
+  const getRegistrations = useCallback(async () => {
     setLoading();
     
     try {
@@ -204,10 +212,10 @@ const ServiceState = props => {
         payload: err.response?.data?.message || 'Lỗi khi tải danh sách đăng ký dịch vụ'
       });
     }
-  };
+  }, [setLoading]);
 
   // Get my registrations (customer)
-  const getMyRegistrations = async () => {
+  const getMyRegistrations = useCallback(async () => {
     setLoading();
     
     try {
@@ -223,10 +231,10 @@ const ServiceState = props => {
         payload: err.response?.data?.message || 'Lỗi khi tải danh sách đăng ký dịch vụ của bạn'
       });
     }
-  };
+  }, [setLoading]);
 
   // Get trainer registrations (trainer)
-  const getTrainerRegistrations = async () => {
+  const getTrainerRegistrations = useCallback(async () => {
     setLoading();
     
     try {
@@ -242,10 +250,10 @@ const ServiceState = props => {
         payload: err.response?.data?.message || 'Lỗi khi tải danh sách khách hàng của bạn'
       });
     }
-  };
+  }, [setLoading]);
 
   // Get registration by ID
-  const getRegistration = async (id) => {
+  const getRegistration = useCallback(async (id) => {
     setLoading();
     
     try {
@@ -261,10 +269,10 @@ const ServiceState = props => {
         payload: err.response?.data?.message || 'Lỗi khi tải thông tin đăng ký dịch vụ'
       });
     }
-  };
+  }, [setLoading]);
 
   // Create registration (customer, admin, receptionist)
-  const createRegistration = async (registrationData) => {
+  const createRegistration = useCallback(async (registrationData) => {
     setLoading();
     
     try {
@@ -283,10 +291,10 @@ const ServiceState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
   // Update registration status (trainer, admin, receptionist)
-  const updateRegistrationStatus = async (id, statusData) => {
+  const updateRegistrationStatus = useCallback(async (id, statusData) => {
     setLoading();
     
     try {
@@ -305,10 +313,10 @@ const ServiceState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
   // Update completed sessions (trainer, admin, receptionist)
-  const updateCompletedSessions = async (id, sessionsData) => {
+  const updateCompletedSessions = useCallback(async (id, sessionsData) => {
     setLoading();
     
     try {
@@ -327,10 +335,10 @@ const ServiceState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
   // Cancel registration (customer, admin, receptionist)
-  const cancelRegistration = async (id) => {
+  const cancelRegistration = useCallback(async (id) => {
     setLoading();
     
     try {
@@ -349,12 +357,12 @@ const ServiceState = props => {
       });
       throw err;
     }
-  };
+  }, [setLoading]);
 
   // Clear registrations
-  const clearRegistration = () => {
+  const clearRegistration = useCallback(() => {
     dispatch({ type: CLEAR_REGISTRATION });
-  };
+  }, []);
 
   return (
     <serviceContext.Provider

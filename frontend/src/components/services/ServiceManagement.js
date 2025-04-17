@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import AlertContext from '../../contexts/alert/alertContext';
 import AuthContext from '../../contexts/auth/authContext';
-import ServiceContext from '../../contexts/service/serviceContext';
+import api from '../../utils/api';
 import {
   Container,
   Paper,
@@ -39,20 +39,12 @@ import {
 const ServiceManagement = () => {
   const alertContext = useContext(AlertContext);
   const authContext = useContext(AuthContext);
-  const serviceContext = useContext(ServiceContext);
 
   const { setAlert } = alertContext;
   const { user } = authContext;
-  const { 
-    services, 
-    getServices, 
-    addService, 
-    updateService, 
-    deleteService, 
-    loading, 
-    error 
-  } = serviceContext;
 
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
@@ -69,14 +61,29 @@ const ServiceManagement = () => {
 
   // Load services when component mounts
   useEffect(() => {
-    getServices();
-    // eslint-disable-next-line
+    fetchServices();
   }, []);
 
-  // Filter services specific to the trainer if trainer is logged in
-  const filteredServices = user && user.role === 'trainer' 
-    ? services.filter(service => service.trainerId === user.id)
-    : services;
+  // Function to fetch services
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      let response;
+      if (user && user.role === 'trainer') {
+        response = await api.get('/services', {
+          params: { trainerId: user.id }
+        });
+      } else {
+        response = await api.get('/services');
+      }
+      setServices(response.data);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      setAlert('Không thể tải danh sách dịch vụ', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOpenDialog = (service = null) => {
     if (service) {
@@ -176,16 +183,18 @@ const ServiceManagement = () => {
       
       if (selectedService) {
         // Update existing service
-        await updateService(selectedService._id, serviceData);
+        await api.put(`/services/${selectedService._id}`, serviceData);
         setAlert('Dịch vụ đã được cập nhật', 'success');
       } else {
         // Add new service
-        await addService(serviceData);
+        await api.post('/services', serviceData);
         setAlert('Dịch vụ mới đã được thêm', 'success');
       }
       
       handleCloseDialog();
-      getServices(); // Refresh the list
+      
+      // Làm mới danh sách dịch vụ
+      fetchServices();
     } catch (err) {
       setAlert(err.response?.data?.message || 'Có lỗi xảy ra', 'error');
     } finally {
@@ -199,10 +208,12 @@ const ServiceManagement = () => {
     setSubmitting(true);
     
     try {
-      await deleteService(selectedService._id);
+      await api.delete(`/services/${selectedService._id}`);
       setAlert('Dịch vụ đã được xóa', 'success');
       handleCloseDeleteDialog();
-      getServices(); // Refresh the list
+      
+      // Làm mới danh sách dịch vụ
+      fetchServices();
     } catch (err) {
       setAlert(err.response?.data?.message || 'Có lỗi xảy ra khi xóa dịch vụ', 'error');
     } finally {
@@ -223,14 +234,6 @@ const ServiceManagement = () => {
       return mins > 0 ? `${hours} giờ ${mins} phút` : `${hours} giờ`;
     }
   };
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -259,81 +262,81 @@ const ServiceManagement = () => {
           </Button>
         </Box>
 
-        {error && (
-          <Typography color="error" sx={{ mb: 2 }}>
-            {error}
-          </Typography>
-        )}
-
-        <Grid container spacing={3}>
-          {filteredServices.length === 0 ? (
-            <Grid item xs={12}>
-              <Typography variant="body1" align="center" sx={{ py: 4 }}>
-                Chưa có dịch vụ nào được tạo. Hãy thêm dịch vụ mới.
-              </Typography>
-            </Grid>
-          ) : (
-            filteredServices.map((service) => (
-              <Grid item xs={12} sm={6} md={4} key={service._id}>
-                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                      <Typography variant="h6" component="h3" gutterBottom>
-                        {service.name}
-                      </Typography>
-                      <Chip
-                        label={service.isActive ? 'Đang hoạt động' : 'Đã vô hiệu'}
-                        color={service.isActive ? 'success' : 'default'}
-                        size="small"
-                      />
-                    </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      {service.description}
-                    </Typography>
-                    <Divider sx={{ my: 1 }} />
-                    <Box display="flex" alignItems="center" justifyContent="space-between">
-                      <Typography variant="body2">
-                        <FitnessCenter fontSize="small" sx={{ mr: 0.5, verticalAlign: 'middle' }} />
-                        {formatDuration(service.duration)}
-                      </Typography>
-                      <Chip
-                        label={
-                          service.category === 'personal' ? 'Cá nhân' :
-                          service.category === 'group' ? 'Nhóm' : 'Đặc biệt'
-                        }
-                        color={
-                          service.category === 'personal' ? 'primary' :
-                          service.category === 'group' ? 'success' : 'secondary'
-                        }
-                        size="small"
-                      />
-                    </Box>
-                    <Typography variant="h6" color="primary.main" sx={{ mt: 2, textAlign: 'right' }}>
-                      {formatCurrency(service.price)}
-                    </Typography>
-                  </CardContent>
-                  <CardActions>
-                    <Button
-                      startIcon={<Edit />}
-                      size="small"
-                      onClick={() => handleOpenDialog(service)}
-                    >
-                      Chỉnh sửa
-                    </Button>
-                    <Button
-                      startIcon={<Delete />}
-                      color="error"
-                      size="small"
-                      onClick={() => handleOpenDeleteDialog(service)}
-                    >
-                      Xóa
-                    </Button>
-                  </CardActions>
-                </Card>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Grid container spacing={3}>
+            {services.length === 0 ? (
+              <Grid item xs={12}>
+                <Typography variant="body1" align="center" sx={{ py: 4 }}>
+                  Chưa có dịch vụ nào được tạo. Hãy thêm dịch vụ mới.
+                </Typography>
               </Grid>
-            ))
-          )}
-        </Grid>
+            ) : (
+              services.map((service) => (
+                <Grid item xs={12} sm={6} md={4} key={service._id}>
+                  <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                        <Typography variant="h6" component="h3" gutterBottom>
+                          {service.name}
+                        </Typography>
+                        <Chip
+                          label={service.isActive ? 'Đang hoạt động' : 'Đã vô hiệu'}
+                          color={service.isActive ? 'success' : 'default'}
+                          size="small"
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {service.description}
+                      </Typography>
+                      <Divider sx={{ my: 1 }} />
+                      <Box display="flex" alignItems="center" justifyContent="space-between">
+                        <Typography variant="body2">
+                          <FitnessCenter fontSize="small" sx={{ mr: 0.5, verticalAlign: 'middle' }} />
+                          {formatDuration(service.duration)}
+                        </Typography>
+                        <Chip
+                          label={
+                            service.category === 'personal' ? 'Cá nhân' :
+                            service.category === 'group' ? 'Nhóm' : 'Đặc biệt'
+                          }
+                          color={
+                            service.category === 'personal' ? 'primary' :
+                            service.category === 'group' ? 'success' : 'secondary'
+                          }
+                          size="small"
+                        />
+                      </Box>
+                      <Typography variant="h6" color="primary.main" sx={{ mt: 2, textAlign: 'right' }}>
+                        {formatCurrency(service.price)}
+                      </Typography>
+                    </CardContent>
+                    <CardActions>
+                      <Button
+                        startIcon={<Edit />}
+                        size="small"
+                        onClick={() => handleOpenDialog(service)}
+                      >
+                        Chỉnh sửa
+                      </Button>
+                      <Button
+                        startIcon={<Delete />}
+                        color="error"
+                        size="small"
+                        onClick={() => handleOpenDeleteDialog(service)}
+                      >
+                        Xóa
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))
+            )}
+          </Grid>
+        )}
       </Paper>
 
       {/* Add/Edit Service Dialog */}

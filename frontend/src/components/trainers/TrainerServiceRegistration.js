@@ -188,13 +188,9 @@ const TrainerServiceRegistration = () => {
   };
 
   const formatDuration = (minutes) => {
-    if (minutes < 60) {
-      return `${minutes} phút`;
-    } else {
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
-      return mins > 0 ? `${hours} giờ ${mins} phút` : `${hours} giờ`;
-    }
+    // Chuyển từ phút sang tuần
+    const weeks = Math.round(minutes / (7 * 24 * 60));
+    return `${weeks} tuần`;
   };
 
   const translateDay = (day) => {

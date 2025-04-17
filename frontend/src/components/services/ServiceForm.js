@@ -65,10 +65,11 @@ const ServiceForm = () => {
             name: service.name,
             description: service.description,
             price: service.price,
-            duration: service.duration,
+            // Chuyển đổi từ phút sang tuần
+            duration: Math.round(service.duration / (7 * 24 * 60)),
             category: service.category,
             isActive: service.isActive,
-            specializations: service.specializations || [] // Thêm specializations vào dữ liệu lấy từ API
+            specializations: service.specializations || []
           });
           
           setLoading(false);
@@ -77,10 +78,10 @@ const ServiceForm = () => {
           navigate('/services');
         }
       };
-
+  
       fetchService();
     }
-  }, [id, isEditMode, navigate, setAlert]);
+  }, [isEditMode, id, navigate, setAlert]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -125,8 +126,8 @@ const ServiceForm = () => {
     
     if (!formData.duration) {
       newErrors.duration = 'Thời lượng dịch vụ không được để trống';
-    } else if (isNaN(formData.duration) || formData.duration < 15) {
-      newErrors.duration = 'Thời lượng dịch vụ phải là số phút (tối thiểu 15 phút)';
+    } else if (isNaN(formData.duration) || formData.duration < 1) {
+      newErrors.duration = 'Thời lượng dịch vụ phải ít nhất 1 tuần';
     }
     
     setErrors(newErrors);
@@ -147,7 +148,8 @@ const ServiceForm = () => {
       const serviceData = {
         ...formData,
         price: parseFloat(formData.price),
-        duration: parseInt(formData.duration)
+        // Chuyển đổi từ tuần sang phút
+        duration: parseInt(formData.duration) * 7 * 24 * 60
       };
       
       if (isEditMode) {
@@ -158,14 +160,14 @@ const ServiceForm = () => {
         setAlert('Thêm dịch vụ mới thành công', 'success');
       }
       
-      navigate('/services');
+      navigate('/services/manage');
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Có lỗi xảy ra';
       setAlert(errorMsg, 'error');
     } finally {
       setSubmitting(false);
     }
-  };
+  };  
 
   if (loading) {
     return (
@@ -240,13 +242,13 @@ const ServiceForm = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Thời lượng (phút)"
+                label="Thời lượng (tuần)"
                 name="duration"
                 type="number"
                 value={formData.duration}
                 onChange={handleChange}
                 InputProps={{
-                  endAdornment: <InputAdornment position="end">phút</InputAdornment>,
+                  endAdornment: <InputAdornment position="end">tuần</InputAdornment>,
                 }}
                 error={Boolean(errors.duration)}
                 helperText={errors.duration}

@@ -65,6 +65,7 @@ exports.getServiceById = async (req, res) => {
 // @desc    Thêm dịch vụ mới
 // @route   POST /api/services
 // @access  Private (admin or trainer)
+// Trong hàm addService
 exports.addService = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -81,16 +82,8 @@ exports.addService = async (req, res) => {
     }
 
     // Nếu có trainerId, kiểm tra xem trainer có tồn tại không
-    if (trainerId) {
-      const trainer = await Trainer.findById(trainerId);
-      if (!trainer) {
-        return res.status(404).json({ message: 'Không tìm thấy huấn luyện viên' });
-      }
-    }
-
-    // Nếu user là trainer, và không có trainerId được chỉ định, thì tự động thêm
     let actualTrainerId = trainerId;
-    if (req.user.role === 'trainer' && !trainerId) {
+    if (req.user.role === 'trainer') {
       const trainer = await Trainer.findOne({ user: req.user.id });
       if (trainer) {
         actualTrainerId = trainer._id;
@@ -108,6 +101,15 @@ exports.addService = async (req, res) => {
     });
     
     const service = await newService.save();
+    
+    // Populate trainer information để trả về đầy đủ thông tin
+    await service.populate({
+      path: 'trainerId',
+      populate: {
+        path: 'user',
+        select: 'fullName'
+      }
+    });
     
     res.status(201).json(service);
   } catch (err) {
