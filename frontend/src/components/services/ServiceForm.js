@@ -20,9 +20,18 @@ import {
   InputAdornment,
   IconButton,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Autocomplete // Thêm import Autocomplete
 } from '@mui/material';
 import { ArrowBack, Save } from '@mui/icons-material';
+
+// Thêm mảng specializations
+const specializations = [
+  'Weight Loss', 'Muscle Gain', 'Cardio', 'Yoga', 'Pilates', 'Strength Training',
+  'CrossFit', 'Bodybuilding', 'Calisthenics', 'HIIT', 'Kickboxing',
+  'Boxing', 'MMA', 'Powerlifting', 'Olympic Weightlifting', 'Nutrition',
+  'Injury Recovery'
+];
 
 const ServiceForm = () => {
   const { id } = useParams();
@@ -39,7 +48,8 @@ const ServiceForm = () => {
     price: '',
     duration: '',
     category: 'personal',
-    isActive: true
+    isActive: true,
+    specializations: [] // Thêm trường specializations vào state
   });
 
   const [errors, setErrors] = useState({});
@@ -57,7 +67,8 @@ const ServiceForm = () => {
             price: service.price,
             duration: service.duration,
             category: service.category,
-            isActive: service.isActive
+            isActive: service.isActive,
+            specializations: service.specializations || [] // Thêm specializations vào dữ liệu lấy từ API
           });
           
           setLoading(false);
@@ -277,6 +288,32 @@ const ServiceForm = () => {
               />
               <FormHelperText>
                 Chỉ những dịch vụ đang hoạt động mới được hiển thị và đăng ký
+              </FormHelperText>
+            </Grid>
+            
+            {/* Thêm component Autocomplete cho specializations */}
+            <Grid item xs={12}>
+              <Autocomplete
+                multiple
+                id="specializations"
+                options={specializations}
+                value={formData.specializations || []}
+                onChange={(event, newValue) => {
+                  setFormData({
+                    ...formData,
+                    specializations: newValue
+                  });
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Chuyên môn liên quan"
+                    placeholder="Chọn chuyên môn"
+                  />
+                )}
+              />
+              <FormHelperText>
+                Chọn các chuyên môn liên quan đến dịch vụ này
               </FormHelperText>
             </Grid>
             

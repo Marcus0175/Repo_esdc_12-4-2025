@@ -26,7 +26,12 @@ import {
   DialogContentText,
   DialogTitle,
   CircularProgress,
-  Avatar
+  Avatar,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  CardMedia
 } from '@mui/material';
 import {
   Edit,
@@ -34,7 +39,9 @@ import {
   Add,
   Block,
   CheckCircle,
-  FitnessCenter
+  FitnessCenter,
+  Schedule,
+  Event
 } from '@mui/icons-material';
 
 const TrainerList = () => {
@@ -51,6 +58,7 @@ const TrainerList = () => {
   const [selectedTrainer, setSelectedTrainer] = useState(null);
   const [actionType, setActionType] = useState('');
   const [processingAction, setProcessingAction] = useState(false);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
 
   // Check if user can manage trainers (admin or receptionist)
   const canManageTrainers = user && (user.role === 'admin' || user.role === 'receptionist');
@@ -105,9 +113,12 @@ const TrainerList = () => {
     }
   };
 
-  const handleRegister = (trainerId) => {
-    // Điều hướng tới trang đăng ký dịch vụ với ID huấn luyện viên
-    navigate(`/service-registration/trainer/${trainerId}`);
+  const handleViewServices = (trainerId) => {
+    navigate(`/services/trainer/${trainerId}`);
+  };
+
+  const handleViewSchedule = (trainerId) => {
+    navigate(`/trainers/${trainerId}/schedule`);
   };
 
   const getDialogContent = () => {
@@ -139,6 +150,297 @@ const TrainerList = () => {
     );
   });
 
+  const renderTableView = () => (
+    <TableContainer>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Ảnh đại diện</TableCell>
+            <TableCell>Họ và tên</TableCell>
+            <TableCell>Email</TableCell>
+            <TableCell>Số điện thoại</TableCell>
+            <TableCell>Chuyên môn</TableCell>
+            <TableCell>Kinh nghiệm</TableCell>
+            <TableCell>Đánh giá</TableCell>
+            <TableCell>Trạng thái</TableCell>
+            <TableCell>Thao tác</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {filteredTrainers.map((trainer) => (
+            <TableRow key={trainer._id}>
+              <TableCell>
+                <Avatar 
+                  src={trainer.user?.profileImage ? `http://localhost:5000${trainer.user.profileImage}` : ''} 
+                  alt={trainer.user?.fullName}
+                  sx={{ width: 50, height: 50 }}
+                />
+              </TableCell>
+              <TableCell>{trainer.user?.fullName}</TableCell>
+              <TableCell>{trainer.user?.email}</TableCell>
+              <TableCell>{trainer.user?.phoneNumber}</TableCell>
+              <TableCell>
+                {trainer.specializations?.map((spec, index) => (
+                  <Chip
+                    key={index}
+                    label={spec}
+                    size="small"
+                    sx={{ mr: 0.5, mb: 0.5 }}
+                  />
+                ))}
+              </TableCell>
+              <TableCell>{trainer.experience} năm</TableCell>
+              <TableCell>
+                <Rating
+                  value={trainer.rating?.average || 0}
+                  precision={0.5}
+                  readOnly
+                  size="small"
+                />
+                <Typography variant="caption" display="block">
+                  ({trainer.rating?.count || 0} đánh giá)
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Chip
+                  label={trainer.user?.active ? 'Đang hoạt động' : 'Đã vô hiệu'}
+                  color={trainer.user?.active ? 'success' : 'error'}
+                  size="small"
+                />
+              </TableCell>
+              <TableCell>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {canManageTrainers && (
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        color="primary"
+                        component={Link}
+                        to={`/trainers/edit/${trainer._id}`}
+                        size="small"
+                      >
+                        <Edit />
+                      </IconButton>
+                      {trainer.user?.active ? (
+                        <IconButton
+                          color="error"
+                          onClick={() => handleOpenDialog(trainer, 'deactivate')}
+                          size="small"
+                        >
+                          <Block />
+                        </IconButton>
+                      ) : (
+                        <IconButton
+                          color="success"
+                          onClick={() => handleOpenDialog(trainer, 'activate')}
+                          size="small"
+                        >
+                          <CheckCircle />
+                        </IconButton>
+                      )}
+                    </Box>
+                  )}
+                  
+                  {trainer.user?.active && (
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="primary"
+                        onClick={() => handleViewServices(trainer._id)}
+                        sx={{ fontSize: '0.7rem', py: 0.5 }}
+                        startIcon={<FitnessCenter />}
+                      >
+                        Dịch vụ
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="secondary"
+                        onClick={() => handleViewSchedule(trainer._id)}
+                        sx={{ fontSize: '0.7rem', py: 0.5 }}
+                        startIcon={<Schedule />}
+                      >
+                        Lịch
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+
+  const renderGridView = () => (
+    <Grid container spacing={3}>
+      {filteredTrainers.map((trainer) => (
+        <Grid item xs={12} sm={6} md={4} key={trainer._id}>
+          <Card 
+            sx={{ 
+              height: '100%', 
+              display: 'flex', 
+              flexDirection: 'column',
+              ...(trainer.user?.active ? {} : { opacity: 0.7 })
+            }}
+          >
+            <CardMedia
+              component="div"
+              sx={{ 
+                pt: '100%', 
+                position: 'relative', 
+                backgroundColor: '#f5f5f5'
+              }}
+            >
+              <Avatar 
+                src={trainer.user?.profileImage ? `http://localhost:5000${trainer.user.profileImage}` : ''} 
+                alt={trainer.user?.fullName}
+                sx={{ 
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 0
+                }}
+              />
+              {!trainer.user?.active && (
+                <Chip
+                  label="Không hoạt động"
+                  color="error"
+                  sx={{ 
+                    position: 'absolute',
+                    top: 10,
+                    right: 10,
+                  }}
+                />
+              )}
+            </CardMedia>
+            <CardContent sx={{ flexGrow: 1 }}>
+              <Typography variant="h5" component="h2" gutterBottom>
+                {trainer.user?.fullName}
+              </Typography>
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Rating
+                  value={trainer.rating?.average || 0}
+                  precision={0.5}
+                  readOnly
+                  size="small"
+                />
+                <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                  ({trainer.rating?.count || 0})
+                </Typography>
+              </Box>
+              
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                <strong>Kinh nghiệm:</strong> {trainer.experience} năm
+              </Typography>
+              
+              <Box sx={{ mt: 2 }}>
+                {trainer.specializations?.slice(0, 3).map((spec, index) => (
+                  <Chip
+                    key={index}
+                    label={spec}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    sx={{ mr: 0.5, mb: 0.5 }}
+                  />
+                ))}
+                {(trainer.specializations?.length || 0) > 3 && (
+                  <Chip
+                    label={`+${trainer.specializations.length - 3}`}
+                    size="small"
+                    sx={{ mr: 0.5, mb: 0.5 }}
+                  />
+                )}
+              </Box>
+            </CardContent>
+            
+            <CardActions sx={{ p: 2 }}>
+              {trainer.user?.active ? (
+                <>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<FitnessCenter />}
+                    onClick={() => handleViewServices(trainer._id)}
+                    sx={{ mr: 1, flexGrow: 1 }}
+                  >
+                    Dịch vụ
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Event />}
+                    onClick={() => handleViewSchedule(trainer._id)}
+                    sx={{ flexGrow: 1 }}
+                  >
+                    Lịch
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  fullWidth
+                >
+                  Không khả dụng
+                </Button>
+              )}
+            </CardActions>
+            
+            {canManageTrainers && (
+              <CardActions sx={{ pt: 0, pb: 2, px: 2 }}>
+                <Button
+                  variant="text"
+                  size="small"
+                  component={Link}
+                  to={`/trainers/edit/${trainer._id}`}
+                  sx={{ mr: 1, flexGrow: 1 }}
+                >
+                  Chỉnh sửa
+                </Button>
+                {trainer.user?.active ? (
+                  <Button
+                    variant="text"
+                    size="small"
+                    color="error"
+                    onClick={() => handleOpenDialog(trainer, 'deactivate')}
+                    sx={{ flexGrow: 1 }}
+                  >
+                    Vô hiệu
+                  </Button>
+                ) : (
+                  <Button
+                    variant="text"
+                    size="small"
+                    color="success"
+                    onClick={() => handleOpenDialog(trainer, 'activate')}
+                    sx={{ flexGrow: 1 }}
+                  >
+                    Kích hoạt
+                  </Button>
+                )}
+              </CardActions>
+            )}
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  );
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
@@ -146,17 +448,36 @@ const TrainerList = () => {
           <Typography variant="h4" component="h2">
             Danh sách huấn luyện viên
           </Typography>
-          {canManageTrainers && (
+          
+          <Box>
+            {canManageTrainers && (
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<Add />}
+                component={Link}
+                to="/trainers/add"
+                sx={{ mr: 2 }}
+              >
+                Thêm huấn luyện viên
+              </Button>
+            )}
+            
+            {/* Toggle view buttons */}
             <Button
-              variant="contained"
-              color="primary"
-              startIcon={<Add />}
-              component={Link}
-              to="/trainers/add"
+              variant={viewMode === 'grid' ? 'contained' : 'outlined'}
+              onClick={() => setViewMode('grid')}
+              sx={{ mr: 1 }}
             >
-              Thêm huấn luyện viên
+              Grid
             </Button>
-          )}
+            <Button
+              variant={viewMode === 'table' ? 'contained' : 'outlined'}
+              onClick={() => setViewMode('table')}
+            >
+              Table
+            </Button>
+          </Box>
         </Box>
 
         <TextField
@@ -175,147 +496,12 @@ const TrainerList = () => {
           }}
         />
 
-        {loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-            <CircularProgress />
-          </Box>
-        ) : filteredTrainers.length === 0 ? (
+        {filteredTrainers.length === 0 ? (
           <Typography variant="body1" sx={{ mt: 2, textAlign: 'center' }}>
             {searchTerm ? 'Không tìm thấy huấn luyện viên nào phù hợp' : 'Chưa có huấn luyện viên nào'}
           </Typography>
         ) : (
-          <TableContainer sx={{ mt: 3 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Ảnh đại diện</TableCell>
-                  <TableCell>Họ và tên</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Số điện thoại</TableCell>
-                  <TableCell>Chuyên môn</TableCell>
-                  <TableCell>Kinh nghiệm</TableCell>
-                  <TableCell>Đánh giá</TableCell>
-                  <TableCell>Trạng thái</TableCell>
-                  <TableCell>Thao tác</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredTrainers.map((trainer) => (
-                  <TableRow key={trainer._id}>
-                    <TableCell>
-                      <Avatar 
-                        src={trainer.user?.profileImage ? `http://localhost:5000${trainer.user.profileImage}` : ''} 
-                        alt={trainer.user?.fullName}
-                        sx={{ width: 50, height: 50 }}
-                      />
-                    </TableCell>
-                    <TableCell>{trainer.user?.fullName}</TableCell>
-                    <TableCell>{trainer.user?.email}</TableCell>
-                    <TableCell>{trainer.user?.phoneNumber}</TableCell>
-                    <TableCell>
-                      {trainer.specializations?.map((spec, index) => (
-                        <Chip
-                          key={index}
-                          label={spec}
-                          size="small"
-                          sx={{ mr: 0.5, mb: 0.5 }}
-                        />
-                      ))}
-                    </TableCell>
-                    <TableCell>{trainer.experience} năm</TableCell>
-                    <TableCell>
-                      <Rating
-                        value={trainer.rating?.average || 0}
-                        precision={0.5}
-                        readOnly
-                        size="small"
-                      />
-                      <Typography variant="caption" display="block">
-                        ({trainer.rating?.count || 0} đánh giá)
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={trainer.user?.active ? 'Đang hoạt động' : 'Đã vô hiệu'}
-                        color={trainer.user?.active ? 'success' : 'error'}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        {canManageTrainers && (
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <IconButton
-                              color="primary"
-                              component={Link}
-                              to={`/trainers/edit/${trainer._id}`}
-                              size="small"
-                            >
-                              <Edit />
-                            </IconButton>
-                            {trainer.user?.active ? (
-                              <IconButton
-                                color="error"
-                                onClick={() => handleOpenDialog(trainer, 'deactivate')}
-                                size="small"
-                              >
-                                <Block />
-                              </IconButton>
-                            ) : (
-                              <IconButton
-                                color="success"
-                                onClick={() => handleOpenDialog(trainer, 'activate')}
-                                size="small"
-                              >
-                                <CheckCircle />
-                              </IconButton>
-                            )}
-                          </Box>
-                        )}
-                        
-                        {isCustomer && trainer.user?.active && (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            color="primary"
-                            startIcon={<FitnessCenter />}
-                            onClick={() => handleRegister(trainer._id)}
-                            sx={{ fontSize: '0.7rem', py: 0.5 }}
-                          >
-                            Đăng ký
-                          </Button>
-                        )}
-                        
-                        {!isCustomer && (
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              component={Link}
-                              to={`/trainers/${trainer._id}`}
-                              sx={{ fontSize: '0.7rem', py: 0.5 }}
-                            >
-                              Chi tiết
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              color="secondary"
-                              component={Link}
-                              to={`/trainers/${trainer._id}/schedule`}
-                              sx={{ fontSize: '0.7rem', py: 0.5 }}
-                            >
-                              Lịch
-                            </Button>
-                          </Box>
-                        )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          viewMode === 'table' ? renderTableView() : renderGridView()
         )}
       </Paper>
 

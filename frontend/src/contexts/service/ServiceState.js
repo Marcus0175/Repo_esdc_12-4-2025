@@ -42,22 +42,35 @@ const ServiceState = props => {
     dispatch({ type: SET_LOADING });
   };
 
-  // Get all services
-  const getServices = async () => {
+  // Get all services with optional filters
+  const getServices = async (filters = {}) => {
     setLoading();
     
     try {
-      const res = await api.get('/services');
+      // Build query string from filters
+      const queryParams = new URLSearchParams();
+      
+      if (filters.trainerId) {
+        queryParams.append('trainerId', filters.trainerId);
+      }
+      
+      const queryString = queryParams.toString();
+      const url = queryString ? `/services?${queryString}` : '/services';
+      
+      const res = await api.get(url);
       
       dispatch({
         type: GET_SERVICES,
         payload: res.data
       });
+      
+      return res.data;
     } catch (err) {
       dispatch({
         type: SERVICE_ERROR,
         payload: err.response?.data?.message || 'Lỗi khi tải danh sách dịch vụ'
       });
+      throw err;
     }
   };
 
@@ -72,15 +85,40 @@ const ServiceState = props => {
         type: GET_SERVICE,
         payload: res.data
       });
+      
+      return res.data;
     } catch (err) {
       dispatch({
         type: SERVICE_ERROR,
         payload: err.response?.data?.message || 'Lỗi khi tải thông tin dịch vụ'
       });
+      throw err;
     }
   };
 
-  // Add service (admin only)
+  // Get trainer services
+  const getTrainerServices = async (trainerId) => {
+    setLoading();
+    
+    try {
+      const res = await api.get(`/services/trainer/${trainerId}`);
+      
+      dispatch({
+        type: GET_SERVICES,
+        payload: res.data
+      });
+      
+      return res.data;
+    } catch (err) {
+      dispatch({
+        type: SERVICE_ERROR,
+        payload: err.response?.data?.message || 'Lỗi khi tải dịch vụ của huấn luyện viên'
+      });
+      throw err;
+    }
+  };
+
+  // Add service (admin or trainer)
   const addService = async (serviceData) => {
     setLoading();
     
@@ -331,6 +369,7 @@ const ServiceState = props => {
         error: state.error,
         getServices,
         getService,
+        getTrainerServices,
         addService,
         updateService,
         deleteService,

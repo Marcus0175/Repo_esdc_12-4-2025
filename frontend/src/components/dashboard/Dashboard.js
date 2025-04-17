@@ -239,6 +239,23 @@ const Dashboard = () => {
               </ListItemIcon>
               <ListItemText primary="Đăng ký của khách hàng" />
             </ListItemButton>
+            
+            <Box sx={{ p: 2, pt: 3 }}>
+              <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                QUẢN LÝ DỊCH VỤ
+              </Typography>
+            </Box>
+            
+            <ListItemButton 
+              component={Link} 
+              to="/services/manage"
+              selected={window.location.pathname === '/services/manage'}
+            >
+              <ListItemIcon>
+                <FitnessCenter />
+              </ListItemIcon>
+              <ListItemText primary="Quản lý dịch vụ" />
+            </ListItemButton>
           </>
         )}
 
@@ -794,6 +811,41 @@ const Dashboard = () => {
               }}
             >
               Xem lịch làm việc
+            </Button>
+          </Paper>
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <Paper
+            sx={{
+              p: 3,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: 'linear-gradient(135deg, #43a047 0%, #81c784 100%)',
+              color: 'white'
+            }}
+          >
+            <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
+            <Typography variant="h5" gutterBottom>
+              Quản lý dịch vụ
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+              Quản lý và cá nhân hóa các dịch vụ bạn cung cấp
+            </Typography>
+            <Button
+              variant="contained"
+              component={Link}
+              to="/services/manage"
+              sx={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.3)'
+                }
+              }}
+            >
+              Quản lý dịch vụ
             </Button>
           </Paper>
         </Grid>

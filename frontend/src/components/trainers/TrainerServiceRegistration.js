@@ -77,34 +77,39 @@ const TrainerServiceRegistration = () => {
         const activeServices = servicesRes.data.filter(service => service.isActive);
         setServices(activeServices);
         
-        // If trainer has specializations, mark services that match those specializations
+        // If trainer has specializations, filter services that match those specializations
         if (trainerRes.data.specializations && trainerRes.data.specializations.length > 0) {
-          // Convert specializations to lowercase for case-insensitive comparison
-          const specializations = trainerRes.data.specializations.map(spec => 
-            spec.toLowerCase()
-          );
+          const trainerSpecs = trainerRes.data.specializations.map(spec => spec.toLowerCase());
           
-          // Mark each service with a relevance flag based on trainer specializations
-          const servicesWithRelevance = activeServices.map(service => {
-            const isRelevant = specializations.some(spec => 
-              service.name.toLowerCase().includes(spec) || 
-              service.description.toLowerCase().includes(spec)
-            );
+          // Filter services that match trainer specializations
+          // A service matches if its name, description, or specializations tag contains any of the trainer specializations
+          const relevantServices = activeServices.filter(service => {
+            // Check service name
+            if (trainerSpecs.some(spec => service.name.toLowerCase().includes(spec))) return true;
             
-            return {
-              ...service,
-              isRelevant
-            };
+            // Check service description
+            if (trainerSpecs.some(spec => service.description.toLowerCase().includes(spec))) return true;
+            
+            // Check service specializations (if that field exists)
+            if (service.specializations && Array.isArray(service.specializations)) {
+              return service.specializations.some(serviceSpec => 
+                trainerSpecs.includes(serviceSpec.toLowerCase())
+              );
+            }
+            
+            return false;
           });
           
-          // Sort to show relevant services first
-          servicesWithRelevance.sort((a, b) => {
-            if (a.isRelevant && !b.isRelevant) return -1;
-            if (!a.isRelevant && b.isRelevant) return 1;
-            return 0;
-          });
-          
-          setServices(servicesWithRelevance);
+          // If we have relevant services, only show those
+          if (relevantServices.length > 0) {
+            setFilteredServices(relevantServices);
+          } else {
+            // Otherwise fall back to all active services
+            setFilteredServices(activeServices);
+          }
+        } else {
+          // If trainer has no specializations, show all active services
+          setFilteredServices(activeServices);
         }
         
         setLoading(false);
@@ -121,14 +126,15 @@ const TrainerServiceRegistration = () => {
   // Cập nhật tổng tiền khi chọn dịch vụ hoặc số buổi thay đổi
   useEffect(() => {
     if (selectedService && numberOfSessions > 0) {
-      const service = services.find(s => s._id === selectedService);
+      const service = filteredServices.find(s => s._id === selectedService) || 
+                      services.find(s => s._id === selectedService);
       if (service) {
         setTotalPrice(service.price * numberOfSessions);
       }
     } else {
       setTotalPrice(0);
     }
-  }, [selectedService, numberOfSessions, services]);
+  }, [selectedService, numberOfSessions, services, filteredServices]);
 
   const handleNext = () => {
     // Validate current step
@@ -203,6 +209,21 @@ const TrainerServiceRegistration = () => {
     };
     
     return dayMap[day] || day;
+  };
+
+  // Hàm kiểm tra xem dịch vụ có phù hợp với chuyên môn của huấn luyện viên không
+  const isServiceRelevant = (service) => {
+    if (!trainer?.specializations || trainer.specializations.length === 0 || 
+        !service.specializations || !Array.isArray(service.specializations)) {
+      return false;
+    }
+    
+    const trainerSpecs = trainer.specializations.map(spec => spec.toLowerCase());
+    
+    // Kiểm tra xem có sự trùng khớp giữa specializations của dịch vụ và huấn luyện viên không
+    return service.specializations.some(serviceSpec => 
+      trainerSpecs.includes(serviceSpec.toLowerCase())
+    );
   };
 
   if (loading) {
@@ -285,7 +306,7 @@ const TrainerServiceRegistration = () => {
             </Typography>
             
             <Grid container spacing={3}>
-              {services.length === 0 ? (
+              {filteredServices.length === 0 ? (
                 <Grid item xs={12}>
                   <Paper sx={{ p: 3, textAlign: 'center' }}>
                     <Typography variant="body1" color="text.secondary" gutterBottom>
@@ -298,15 +319,15 @@ const TrainerServiceRegistration = () => {
                 </Grid>
               ) : (
                 // Hiển thị các dịch vụ được lọc
-                services.map((service) => (
+                filteredServices.map((service) => (
                   <Grid item xs={12} md={4} key={service._id}>
                     <Card 
                       variant={selectedService === service._id ? "outlined" : "elevation"}
                       sx={{ 
                         cursor: 'pointer',
-                        border: selectedService === service._id ? 2 : service.isRelevant ? 1 : 0,
-                        borderColor: selectedService === service._id ? 'primary.main' : service.isRelevant ? 'primary.light' : 'transparent',
-                        backgroundColor: service.isRelevant ? 'rgba(25, 118, 210, 0.04)' : 'inherit',
+                        border: selectedService === service._id ? 2 : isServiceRelevant(service) ? 1 : 0,
+                        borderColor: selectedService === service._id ? 'primary.main' : isServiceRelevant(service) ? 'primary.light' : 'transparent',
+                        backgroundColor: isServiceRelevant(service) ? 'rgba(25, 118, 210, 0.04)' : 'inherit',
                         '&:hover': {
                           boxShadow: 3
                         },
@@ -321,7 +342,7 @@ const TrainerServiceRegistration = () => {
                           <Typography variant="h6">
                             {service.name}
                           </Typography>
-                          {service.isRelevant && (
+                          {isServiceRelevant(service) && (
                             <Chip 
                               size="small" 
                               color="primary" 
@@ -354,24 +375,18 @@ const TrainerServiceRegistration = () => {
                         </Typography>
                         
                         {/* Hiển thị các từ khóa chuyên môn liên quan */}
-                        {trainer?.specializations && service.isRelevant && (
+                        {service.specializations && service.specializations.length > 0 && (
                           <Box sx={{ mt: 1 }}>
-                            {trainer.specializations
-                              .filter(spec => 
-                                service.name.toLowerCase().includes(spec.toLowerCase()) || 
-                                service.description.toLowerCase().includes(spec.toLowerCase())
-                              )
-                              .map((spec, idx) => (
-                                <Chip
-                                  key={idx}
-                                  label={spec}
-                                  size="small"
-                                  variant="outlined"
-                                  color="primary"
-                                  sx={{ mr: 0.5, mb: 0.5 }}
-                                />
-                              ))
-                            }
+                            {service.specializations.map((spec, idx) => (
+                              <Chip
+                                key={idx}
+                                label={spec}
+                                size="small"
+                                variant="outlined"
+                                color="primary"
+                                sx={{ mr: 0.5, mb: 0.5 }}
+                              />
+                            ))}
                           </Box>
                         )}
                       </CardContent>
@@ -506,10 +521,14 @@ const TrainerServiceRegistration = () => {
                     {selectedService && (
                       <>
                         <Typography variant="body1">
-                          {services.find(s => s._id === selectedService)?.name}
+                          {filteredServices.find(s => s._id === selectedService)?.name || 
+                           services.find(s => s._id === selectedService)?.name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                        Thời lượng: {formatDuration(services.find(s => s._id === selectedService)?.duration)}
+                          Thời lượng: {formatDuration(
+                            filteredServices.find(s => s._id === selectedService)?.duration || 
+                            services.find(s => s._id === selectedService)?.duration
+                          )}
                         </Typography>
                       </>
                     )}
@@ -565,7 +584,10 @@ const TrainerServiceRegistration = () => {
               </Typography>
               <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Typography variant="body1">
-                  {selectedService && `${services.find(s => s._id === selectedService)?.name} x ${numberOfSessions} buổi`}
+                  {selectedService && `${
+                    filteredServices.find(s => s._id === selectedService)?.name || 
+                    services.find(s => s._id === selectedService)?.name
+                  } x ${numberOfSessions} buổi`}
                 </Typography>
                 <Typography variant="h5" color="primary">
                   {formatCurrency(totalPrice)}

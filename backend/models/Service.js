@@ -29,6 +29,11 @@ const ServiceSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  trainerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Trainer',
+    default: null
   }
 }, {
   timestamps: true

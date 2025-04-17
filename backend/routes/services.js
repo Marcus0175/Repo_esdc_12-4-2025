@@ -15,14 +15,19 @@ router.get('/', serviceController.getAllServices);
 // @access  Public
 router.get('/:id', serviceController.getServiceById);
 
+// @route   GET api/services/trainer/:trainerId
+// @desc    Lấy dịch vụ theo huấn luyện viên
+// @access  Public
+router.get('/trainer/:trainerId', serviceController.getTrainerServices);
+
 // @route   POST api/services
 // @desc    Thêm dịch vụ mới
-// @access  Private (admin only)
+// @access  Private (admin, trainer)
 router.post(
   '/',
   [
     auth,
-    roleCheck('admin'),
+    roleCheck('admin', 'trainer'),
     [
       check('name', 'Tên dịch vụ là bắt buộc').not().isEmpty(),
       check('description', 'Mô tả dịch vụ là bắt buộc').not().isEmpty(),
@@ -35,12 +40,12 @@ router.post(
 
 // @route   PUT api/services/:id
 // @desc    Cập nhật dịch vụ
-// @access  Private (admin only)
+// @access  Private (admin, trainer who owns the service)
 router.put(
   '/:id',
   [
     auth,
-    roleCheck('admin'),
+    roleCheck('admin', 'trainer'),
     [
       check('name', 'Tên dịch vụ không được để trống').optional().not().isEmpty(),
       check('description', 'Mô tả dịch vụ không được để trống').optional().not().isEmpty(),
@@ -54,10 +59,10 @@ router.put(
 
 // @route   DELETE api/services/:id
 // @desc    Xóa dịch vụ (vô hiệu hóa)
-// @access  Private (admin only)
+// @access  Private (admin, trainer who owns the service)
 router.delete(
   '/:id',
-  [auth, roleCheck('admin')],
+  [auth, roleCheck('admin', 'trainer')],
   serviceController.deleteService
 );
 
