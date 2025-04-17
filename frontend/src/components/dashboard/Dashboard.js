@@ -449,10 +449,10 @@ const Dashboard = () => {
         >
           <Build sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Quản lý thiết bị
+            Quản lý cơ sở vật chất
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-            Quản lý và theo dõi tình trạng các thiết bị tập luyện
+            Quản lý và theo dõi tình trạng cơ sở vật chất
           </Typography>
           <Button
             variant="contained"
@@ -593,10 +593,10 @@ const Dashboard = () => {
         >
           <Build sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Quản lý thiết bị
+            Quản lý cơ sở vật chất
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-            Theo dõi tình trạng các thiết bị tập luyện
+            Theo dõi tình trạng cơ sở vật chất
           </Typography>
           <Button
             variant="contained"

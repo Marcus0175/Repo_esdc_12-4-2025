@@ -210,7 +210,7 @@ const EquipmentList = () => {
       <Paper sx={{ p: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4" component="h2">
-            Quản lý thiết bị
+            Quản lý cơ sở vật chất
           </Typography>
           {isAdmin && (
             <Button
