@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AlertContext from '../../contexts/alert/alertContext';
-import AuthContext from '../../contexts/auth/authContext';
 import api from '../../utils/api';
 import {
   Container,
@@ -10,105 +9,177 @@ import {
   Box,
   Button,
   Grid,
+  Card,
+  CardContent,
+  Divider,
+  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  TextField,
-  Card,
-  CardContent,
-  Avatar,
-  Chip,
-  Divider,
   CircularProgress,
-  FormHelperText,
   Stepper,
   Step,
-  StepLabel
+  StepLabel,
+  FormHelperText,
+  Avatar,
+  Chip
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { ArrowBack, FitnessCenter, Person, CalendarMonth } from '@mui/icons-material';
 import viLocale from 'date-fns/locale/vi';
-import { ArrowBack, Check, Schedule, FitnessCenter, Person, CalendarMonth } from '@mui/icons-material';
 import { addDays } from 'date-fns';
 
-const steps = ['Chọn huấn luyện viên', 'Chọn lịch làm việc', 'Xác nhận đăng ký'];
+const steps = ['Chọn dịch vụ', 'Chọn lịch làm việc', 'Xác nhận đăng ký'];
 
-const ServiceRegistrationForm = () => {
-  const { serviceId } = useParams();
+const TrainerServiceRegistration = () => {
+  const { trainerId } = useParams();
   const navigate = useNavigate();
   const alertContext = useContext(AlertContext);
-  const authContext = useContext(AuthContext);
   const { setAlert } = alertContext;
-  const { user } = authContext;
 
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Data states
-  const [service, setService] = useState(null);
-  const [trainers, setTrainers] = useState([]);
+  // Dữ liệu
+  const [trainer, setTrainer] = useState(null);
+  const [services, setServices] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
   const [workSchedules, setWorkSchedules] = useState([]);
 
-  // Form states
-  const [selectedTrainer, setSelectedTrainer] = useState('');
+  // Form data
+  const [selectedService, setSelectedService] = useState('');
   const [selectedSchedule, setSelectedSchedule] = useState('');
   const [startDate, setStartDate] = useState(addDays(new Date(), 1));
   const [numberOfSessions, setNumberOfSessions] = useState(1);
   const [notes, setNotes] = useState('');
 
-  // Calculate total price based on service price and number of sessions
-  const totalPrice = service ? service.price * numberOfSessions : 0;
+  // Tính tổng tiền
+  const [totalPrice, setTotalPrice] = useState(0);
 
   useEffect(() => {
-    // Fetch service data
-    const fetchServiceData = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get(`/services/${serviceId}`);
-        setService(res.data);
-      } catch (err) {
-        setAlert('Không thể tải thông tin dịch vụ', 'error');
-        navigate('/services');
-      }
-    };
-
-    // Fetch trainers data
-    const fetchTrainers = async () => {
-      try {
-        const res = await api.get('/users/trainers');
-        // Filter only active trainers
-        const activeTrainers = res.data.filter(trainer => trainer.user?.active);
-        setTrainers(activeTrainers);
-        setLoading(false);
-      } catch (err) {
-        setAlert('Không thể tải danh sách huấn luyện viên', 'error');
-        setLoading(false);
-      }
-    };
-
-    fetchServiceData();
-    fetchTrainers();
-  }, [serviceId, navigate, setAlert]);
-
-  // Fetch trainer schedules when a trainer is selected
-  useEffect(() => {
-    if (selectedTrainer) {
-      const fetchTrainerSchedules = async () => {
-        try {
-          const res = await api.get(`/work-schedules/available/${selectedTrainer}`);
-          setWorkSchedules(res.data);
-        } catch (err) {
-          setAlert('Không thể tải lịch làm việc của huấn luyện viên', 'error');
+        // Tải thông tin huấn luyện viên
+        const trainerRes = await api.get(`/users/trainers/${trainerId}`);
+        setTrainer(trainerRes.data);
+        
+        // Tải lịch làm việc của huấn luyện viên
+        const schedulesRes = await api.get(`/work-schedules/available/${trainerId}`);
+        setWorkSchedules(schedulesRes.data);
+        
+        // Tải danh sách dịch vụ
+        const servicesRes = await api.get('/services');
+        
+        // Lọc các dịch vụ đang hoạt động
+        const activeServices = servicesRes.data.filter(service => service.isActive);
+        setServices(activeServices);
+        
+        // Nếu trainer có chuyên môn, ưu tiên các dịch vụ phù hợp với chuyên môn của huấn luyện viên
+        // Nhưng vẫn hiển thị tất cả dịch vụ để khách hàng có thể chọn
+        if (trainerRes.data.specializations && trainerRes.data.specializations.length > 0) {
+          // Map chuyên môn sang chữ thường để dễ so sánh
+          const specializations = trainerRes.data.specializations.map(spec => 
+            spec.toLowerCase()
+          );
+          
+          // Đánh dấu dịch vụ phù hợp với chuyên môn của huấn luyện viên
+          const servicesWithRelevance = activeServices.map(service => {
+            // Kiểm tra tên dịch vụ hoặc mô tả có chứa bất kỳ chuyên môn nào không
+            const isRelevant = specializations.some(spec => 
+              service.name.toLowerCase().includes(spec) || 
+              service.description.toLowerCase().includes(spec)
+            );
+            
+            return {
+              ...service,
+              isRelevant
+            };
+          });
+          
+          // Sắp xếp để dịch vụ liên quan hiển thị trước
+          servicesWithRelevance.sort((a, b) => {
+            if (a.isRelevant && !b.isRelevant) return -1;
+            if (!a.isRelevant && b.isRelevant) return 1;
+            return 0;
+          });
+          
+          setFilteredServices(servicesWithRelevance);
+        } else {
+          // Nếu không có chuyên môn, hiển thị tất cả dịch vụ
+          setFilteredServices(activeServices);
         }
+        
+        setLoading(false);
+      } catch (err) {
+        setAlert('Không thể tải thông tin cần thiết', 'error');
+        navigate('/trainers');
+      }
+    };
+    
+    fetchData();
+  }, [trainerId, navigate, setAlert]);
+
+  // Cập nhật tổng tiền khi chọn dịch vụ hoặc số buổi thay đổi
+  useEffect(() => {
+    if (selectedService && numberOfSessions > 0) {
+      const service = services.find(s => s._id === selectedService);
+      if (service) {
+        setTotalPrice(service.price * numberOfSessions);
+      }
+    } else {
+      setTotalPrice(0);
+    }
+  }, [selectedService, numberOfSessions, services]);
+
+  const handleNext = () => {
+    // Validate current step
+    if (activeStep === 0 && !selectedService) {
+      setAlert('Vui lòng chọn dịch vụ', 'error');
+      return;
+    }
+
+    if (activeStep === 1 && !selectedSchedule) {
+      setAlert('Vui lòng chọn lịch làm việc', 'error');
+      return;
+    }
+
+    setActiveStep((prevStep) => prevStep + 1);
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevStep) => prevStep - 1);
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedService || !selectedSchedule || !startDate || numberOfSessions < 1) {
+      setAlert('Vui lòng điền đầy đủ thông tin', 'error');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const registrationData = {
+        trainerId,
+        serviceId: selectedService,
+        workScheduleId: selectedSchedule,
+        startDate,
+        numberOfSessions,
+        notes
       };
 
-      fetchTrainerSchedules();
-    } else {
-      setWorkSchedules([]);
+      await api.post('/service-registrations', registrationData);
+      setAlert('Đăng ký dịch vụ thành công. Vui lòng chờ huấn luyện viên xác nhận.', 'success');
+      navigate('/my-registrations');
+    } catch (err) {
+      setAlert(err.response?.data?.message || 'Có lỗi xảy ra khi đăng ký dịch vụ', 'error');
+    } finally {
+      setSubmitting(false);
     }
-  }, [selectedTrainer, setAlert]);
+  };
 
   const formatCurrency = (price) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -138,54 +209,7 @@ const ServiceRegistrationForm = () => {
     return dayMap[day] || day;
   };
 
-  const handleNext = () => {
-    // Validate current step
-    if (activeStep === 0 && !selectedTrainer) {
-      setAlert('Vui lòng chọn huấn luyện viên', 'error');
-      return;
-    }
-
-    if (activeStep === 1 && !selectedSchedule) {
-      setAlert('Vui lòng chọn lịch làm việc', 'error');
-      return;
-    }
-
-    setActiveStep((prevStep) => prevStep + 1);
-  };
-
-  const handleBack = () => {
-    setActiveStep((prevStep) => prevStep - 1);
-  };
-
-  const handleSubmit = async () => {
-    if (!selectedTrainer || !selectedSchedule || !startDate || numberOfSessions < 1) {
-      setAlert('Vui lòng điền đầy đủ thông tin', 'error');
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      const registrationData = {
-        trainerId: selectedTrainer,
-        serviceId: service._id,
-        workScheduleId: selectedSchedule,
-        startDate,
-        numberOfSessions,
-        notes
-      };
-
-      await api.post('/service-registrations', registrationData);
-      setAlert('Đăng ký dịch vụ thành công. Vui lòng chờ huấn luyện viên xác nhận.', 'success');
-      navigate('/my-registrations');
-    } catch (err) {
-      setAlert(err.response?.data?.message || 'Có lỗi xảy ra khi đăng ký dịch vụ', 'error');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (loading || !service) {
+  if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -200,13 +224,13 @@ const ServiceRegistrationForm = () => {
           <Button
             variant="outlined"
             startIcon={<ArrowBack />}
-            onClick={() => navigate('/services')}
+            onClick={() => navigate('/trainers')}
             sx={{ mr: 2 }}
           >
             Quay lại
           </Button>
           <Typography variant="h4" component="h2">
-            Đăng ký dịch vụ
+            Đăng ký dịch vụ với huấn luyện viên
           </Typography>
         </Box>
 
@@ -220,30 +244,36 @@ const ServiceRegistrationForm = () => {
           </Stepper>
         </Box>
 
+        {/* Thông tin huấn luyện viên */}
         <Box mb={4}>
           <Card variant="outlined">
             <CardContent>
-              <Typography variant="h6" color="primary" gutterBottom>
-                Thông tin dịch vụ đã chọn
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body1">
-                    <strong>Tên dịch vụ:</strong> {service.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    {service.description}
-                  </Typography>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={2}>
+                  <Avatar
+                    src={trainer?.user?.profileImage ? `http://localhost:5000${trainer.user.profileImage}` : ''}
+                    alt={trainer?.user?.fullName}
+                    sx={{ width: 100, height: 100, mx: 'auto' }}
+                  />
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="body1">
-                      <FitnessCenter sx={{ verticalAlign: 'middle', mr: 1 }} />
-                      Thời lượng: {formatDuration(service.duration)}
-                    </Typography>
-                    <Typography variant="h6" color="primary">
-                      {formatCurrency(service.price)}
-                    </Typography>
+                <Grid item xs={12} md={10}>
+                  <Typography variant="h5" gutterBottom>
+                    {trainer?.user?.fullName}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" gutterBottom>
+                    {trainer?.experience} năm kinh nghiệm
+                  </Typography>
+                  <Box>
+                    {trainer?.specializations?.map((spec, index) => (
+                      <Chip
+                        key={index}
+                        label={spec}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        sx={{ mr: 0.5, mb: 0.5 }}
+                      />
+                    ))}
                   </Box>
                 </Grid>
               </Grid>
@@ -251,67 +281,73 @@ const ServiceRegistrationForm = () => {
           </Card>
         </Box>
 
+        {/* Step 1: Chọn dịch vụ */}
         {activeStep === 0 && (
           <Box>
             <Typography variant="h5" gutterBottom>
-              Chọn huấn luyện viên
+              Chọn dịch vụ
             </Typography>
+            
             <Grid container spacing={3}>
-              {trainers.map((trainer) => (
-                <Grid item xs={12} md={4} key={trainer._id}>
-                  <Card 
-                    variant={selectedTrainer === trainer._id ? "outlined" : "elevation"}
-                    sx={{ 
-                      cursor: 'pointer',
-                      border: selectedTrainer === trainer._id ? 2 : 0,
-                      borderColor: selectedTrainer === trainer._id ? 'primary.main' : 'transparent',
-                      '&:hover': {
-                        boxShadow: 3
-                      }
-                    }}
-                    onClick={() => setSelectedTrainer(trainer._id)}
-                  >
-                    <CardContent>
-                      <Box display="flex" alignItems="center" mb={2}>
-                        <Avatar 
-                          src={trainer.user?.profileImage ? `http://localhost:5000${trainer.user.profileImage}` : ''} 
-                          alt={trainer.user?.fullName}
-                          sx={{ width: 64, height: 64, mr: 2 }}
-                        />
-                        <Box>
+              {filteredServices.length === 0 ? (
+                <Grid item xs={12}>
+                  <Typography variant="body1" align="center">
+                    Không có dịch vụ nào khả dụng
+                  </Typography>
+                </Grid>
+              ) : (
+                filteredServices.map((service) => (
+                  <Grid item xs={12} md={4} key={service._id}>
+                    <Card 
+                      variant={selectedService === service._id ? "outlined" : "elevation"}
+                      sx={{ 
+                        cursor: 'pointer',
+                        border: selectedService === service._id ? 2 : service.isRelevant ? 1 : 0,
+                        borderColor: selectedService === service._id ? 'primary.main' : service.isRelevant ? 'primary.light' : 'transparent',
+                        backgroundColor: service.isRelevant ? 'rgba(25, 118, 210, 0.04)' : 'inherit',
+                        '&:hover': {
+                          boxShadow: 3
+                        }
+                      }}
+                      onClick={() => setSelectedService(service._id)}
+                    >
+                      <CardContent>
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
                           <Typography variant="h6">
-                            {trainer.user?.fullName}
+                            {service.name}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {trainer.experience} năm kinh nghiệm
+                          {service.isRelevant && (
+                            <Chip 
+                              size="small" 
+                              color="primary" 
+                              label="Phù hợp chuyên môn"
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
+                        <Typography variant="body2" color="textSecondary" gutterBottom>
+                          {service.description}
+                        </Typography>
+                        <Divider sx={{ my: 2 }} />
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                          <Typography variant="body2">
+                            <FitnessCenter sx={{ fontSize: 'small', verticalAlign: 'middle', mr: 0.5 }} />
+                            {formatDuration(service.duration)}
+                          </Typography>
+                          <Typography variant="h6" color="primary">
+                            {formatCurrency(service.price)}
                           </Typography>
                         </Box>
-                        {selectedTrainer === trainer._id && (
-                          <Check color="primary" sx={{ ml: 'auto' }} />
-                        )}
-                      </Box>
-                      <Divider sx={{ mb: 2 }} />
-                      <Typography variant="subtitle2" gutterBottom>
-                        Chuyên môn:
-                      </Typography>
-                      <Box sx={{ mt: 1 }}>
-                        {trainer.specializations?.map((spec, index) => (
-                          <Chip
-                            key={index}
-                            label={spec}
-                            size="small"
-                            sx={{ mr: 0.5, mb: 0.5 }}
-                          />
-                        ))}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))
+              )}
             </Grid>
           </Box>
         )}
 
+        {/* Step 2: Chọn lịch làm việc */}
         {activeStep === 1 && (
           <Box>
             <Typography variant="h5" gutterBottom>
@@ -390,6 +426,7 @@ const ServiceRegistrationForm = () => {
           </Box>
         )}
 
+        {/* Step 3: Xác nhận đăng ký */}
         {activeStep === 2 && (
           <Box>
             <Typography variant="h5" gutterBottom>
@@ -404,13 +441,26 @@ const ServiceRegistrationForm = () => {
                       <Person sx={{ verticalAlign: 'middle', mr: 1 }} />
                       Thông tin huấn luyện viên
                     </Typography>
-                    {trainers.find(t => t._id === selectedTrainer) && (
+                    <Typography variant="body1">
+                      {trainer?.user?.fullName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {trainer?.experience} năm kinh nghiệm
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      <FitnessCenter sx={{ verticalAlign: 'middle', mr: 1 }} />
+                      Dịch vụ
+                    </Typography>
+                    {selectedService && (
                       <>
                         <Typography variant="body1">
-                          {trainers.find(t => t._id === selectedTrainer).user.fullName}
+                          {services.find(s => s._id === selectedService)?.name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {trainers.find(t => t._id === selectedTrainer).experience} năm kinh nghiệm
+                        Thời lượng: {formatDuration(services.find(s => s._id === selectedService)?.duration)}
                         </Typography>
                       </>
                     )}
@@ -418,16 +468,16 @@ const ServiceRegistrationForm = () => {
                   
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle1" gutterBottom>
-                      <Schedule sx={{ verticalAlign: 'middle', mr: 1 }} />
+                      <CalendarMonth sx={{ verticalAlign: 'middle', mr: 1 }} />
                       Thông tin lịch tập
                     </Typography>
-                    {workSchedules.find(s => s._id === selectedSchedule) && (
+                    {selectedSchedule && (
                       <>
                         <Typography variant="body1">
-                          {translateDay(workSchedules.find(s => s._id === selectedSchedule).dayOfWeek)}
+                          {translateDay(workSchedules.find(s => s._id === selectedSchedule)?.dayOfWeek)}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {workSchedules.find(s => s._id === selectedSchedule).startTime} - {workSchedules.find(s => s._id === selectedSchedule).endTime}
+                          {workSchedules.find(s => s._id === selectedSchedule)?.startTime} - {workSchedules.find(s => s._id === selectedSchedule)?.endTime}
                         </Typography>
                       </>
                     )}
@@ -443,19 +493,6 @@ const ServiceRegistrationForm = () => {
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Số buổi: {numberOfSessions}
-                    </Typography>
-                  </Grid>
-                  
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      <FitnessCenter sx={{ verticalAlign: 'middle', mr: 1 }} />
-                      Dịch vụ
-                    </Typography>
-                    <Typography variant="body1">
-                      {service.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Thời lượng: {formatDuration(service.duration)}
                     </Typography>
                   </Grid>
                   
@@ -479,7 +516,7 @@ const ServiceRegistrationForm = () => {
               </Typography>
               <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Typography variant="body1">
-                  {service.name} x {numberOfSessions} buổi
+                  {selectedService && `${services.find(s => s._id === selectedService)?.name} x ${numberOfSessions} buổi`}
                 </Typography>
                 <Typography variant="h5" color="primary">
                   {formatCurrency(totalPrice)}
@@ -530,4 +567,4 @@ const ServiceRegistrationForm = () => {
   );
 };
 
-export default ServiceRegistrationForm;
+export default TrainerServiceRegistration;

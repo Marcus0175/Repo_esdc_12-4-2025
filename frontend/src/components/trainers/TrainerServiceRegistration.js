@@ -27,7 +27,7 @@ import {
 } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { ArrowBack, FitnessCenter, Person, CalendarMonth } from '@mui/icons-material';
+import { ArrowBack, FitnessCenter, Person, CalendarMonth, Check } from '@mui/icons-material';
 import viLocale from 'date-fns/locale/vi';
 import { addDays } from 'date-fns';
 
@@ -59,26 +59,52 @@ const TrainerServiceRegistration = () => {
   const [totalPrice, setTotalPrice] = useState(0);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Tải thông tin huấn luyện viên
-        const trainerRes = await api.get(`/users/trainers/${trainerId}`);
-        setTrainer(trainerRes.data);
+    // Cập nhật phương thức fetchData trong TrainerServiceRegistration.js
+const fetchData = async () => {
+  try {
+    // Tải thông tin huấn luyện viên
+    const trainerRes = await api.get(`/users/trainers/${trainerId}`);
+    setTrainer(trainerRes.data);
+    
+    // Tải lịch làm việc của huấn luyện viên
+    const schedulesRes = await api.get(`/work-schedules/available/${trainerId}`);
+    setWorkSchedules(schedulesRes.data);
+    
+    // Tải danh sách dịch vụ
+    const servicesRes = await api.get('/services');
+    
+    // Lọc các dịch vụ hoạt động
+    const activeServices = servicesRes.data.filter(service => service.isActive);
+    
+    // Lọc dịch vụ phù hợp với chuyên môn của huấn luyện viên
+    if (trainerRes.data.specializations && trainerRes.data.specializations.length > 0) {
+      // Tạo một mảng các từ khóa từ chuyên môn để so sánh
+      const specializations = trainerRes.data.specializations.map(spec => spec.toLowerCase());
+      
+      // Lọc dịch vụ dựa trên tên và mô tả có liên quan đến chuyên môn
+      const filteredServices = activeServices.filter(service => {
+        const serviceName = service.name.toLowerCase();
+        const serviceDesc = service.description.toLowerCase();
         
-        // Tải lịch làm việc của huấn luyện viên
-        const schedulesRes = await api.get(`/work-schedules/available/${trainerId}`);
-        setWorkSchedules(schedulesRes.data);
-        
-        // Tải danh sách dịch vụ
-        const servicesRes = await api.get('/services');
-        setServices(servicesRes.data.filter(service => service.isActive));
-        
-        setLoading(false);
-      } catch (err) {
-        setAlert('Không thể tải thông tin cần thiết', 'error');
-        navigate('/trainers');
-      }
-    };
+        // Kiểm tra xem tên hoặc mô tả dịch vụ có chứa bất kỳ chuyên môn nào
+        return specializations.some(spec => 
+          serviceName.includes(spec) || serviceDesc.includes(spec)
+        );
+      });
+      
+      // Nếu không tìm thấy dịch vụ phù hợp, hiển thị tất cả dịch vụ hoạt động
+      setServices(filteredServices.length > 0 ? filteredServices : activeServices);
+    } else {
+      // Nếu huấn luyện viên không có chuyên môn, hiển thị tất cả dịch vụ hoạt động
+      setServices(activeServices);
+    }
+    
+    setLoading(false);
+  } catch (err) {
+    setAlert('Không thể tải thông tin cần thiết', 'error');
+    navigate('/trainers');
+  }
+};
     
     fetchData();
   }, [trainerId, navigate, setAlert]);
@@ -252,11 +278,17 @@ const TrainerServiceRegistration = () => {
             <Grid container spacing={3}>
               {services.length === 0 ? (
                 <Grid item xs={12}>
-                  <Typography variant="body1" align="center">
-                    Không có dịch vụ nào khả dụng
-                  </Typography>
+                  <Paper sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography variant="body1" color="text.secondary" gutterBottom>
+                      Không có dịch vụ nào phù hợp với chuyên môn của huấn luyện viên này.
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Vui lòng chọn huấn luyện viên khác hoặc liên hệ với chúng tôi để được tư vấn.
+                    </Typography>
+                  </Paper>
                 </Grid>
               ) : (
+                // Hiển thị các dịch vụ được lọc
                 services.map((service) => (
                   <Grid item xs={12} md={4} key={service._id}>
                     <Card 
@@ -267,28 +299,75 @@ const TrainerServiceRegistration = () => {
                         borderColor: selectedService === service._id ? 'primary.main' : 'transparent',
                         '&:hover': {
                           boxShadow: 3
-                        }
+                        },
+                        height: '100%', // Đảm bảo các thẻ có chiều cao đồng đều
+                        display: 'flex',
+                        flexDirection: 'column'
                       }}
                       onClick={() => setSelectedService(service._id)}
                     >
-                      <CardContent>
+                      <CardContent sx={{ flexGrow: 1 }}>
                         <Typography variant="h6">
                           {service.name}
                         </Typography>
-                        <Typography variant="body2" color="textSecondary" gutterBottom>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                           {service.description}
                         </Typography>
-                        <Divider sx={{ my: 2 }} />
-                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                        
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <Chip 
+                            size="small" 
+                            label={service.category === 'personal' ? 'Cá nhân' : 
+                                  service.category === 'group' ? 'Nhóm' : 'Đặc biệt'}
+                            color={service.category === 'personal' ? 'primary' : 
+                                  service.category === 'group' ? 'success' : 'secondary'}
+                            sx={{ mr: 1 }}
+                          />
                           <Typography variant="body2">
                             <FitnessCenter sx={{ fontSize: 'small', verticalAlign: 'middle', mr: 0.5 }} />
                             {formatDuration(service.duration)}
                           </Typography>
-                          <Typography variant="h6" color="primary">
-                            {formatCurrency(service.price)}
-                          </Typography>
                         </Box>
+                        <Divider sx={{ my: 1 }} />
+                        <Typography variant="h6" color="primary" sx={{ textAlign: 'right' }}>
+                          {formatCurrency(service.price)}
+                        </Typography>
+                        
+                        {/* Hiển thị các từ khóa chuyên môn liên quan */}
+                        {trainer?.specializations && (
+                          <Box sx={{ mt: 1 }}>
+                            {trainer.specializations
+                              .filter(spec => 
+                                service.name.toLowerCase().includes(spec.toLowerCase()) || 
+                                service.description.toLowerCase().includes(spec.toLowerCase())
+                              )
+                              .map((spec, idx) => (
+                                <Chip
+                                  key={idx}
+                                  label={spec}
+                                  size="small"
+                                  variant="outlined"
+                                  color="primary"
+                                  sx={{ mr: 0.5, mb: 0.5 }}
+                                />
+                              ))
+                            }
+                          </Box>
+                        )}
                       </CardContent>
+                      
+                      {selectedService === service._id && (
+                        <Box sx={{ 
+                          p: 1, 
+                          bgcolor: 'primary.main', 
+                          color: 'white',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center'
+                        }}>
+                          <Check sx={{ mr: 1 }} /> Đã chọn
+                        </Box>
+                      )}
                     </Card>
                   </Grid>
                 ))

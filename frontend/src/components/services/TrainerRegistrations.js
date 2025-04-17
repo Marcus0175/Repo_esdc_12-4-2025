@@ -25,7 +25,8 @@ import {
   Avatar,
   LinearProgress,
   IconButton,
-  Tooltip
+  Tooltip,
+  Badge
 } from '@mui/material';
 import {
   Check,
@@ -36,7 +37,8 @@ import {
   Add,
   CalendarMonth,
   ExpandMore,
-  ExpandLess
+  ExpandLess,
+  Notifications
 } from '@mui/icons-material';
 
 // Tab panel component
@@ -68,6 +70,8 @@ const TrainerRegistrations = () => {
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [expandedIds, setExpandedIds] = useState([]);
+  const [lastCheckedTime, setLastCheckedTime] = useState(null);
+  const [newRegistrations, setNewRegistrations] = useState(0);
 
   // Dialog states
   const [approveDialog, setApproveDialog] = useState({ open: false, registration: null });
@@ -77,6 +81,14 @@ const TrainerRegistrations = () => {
 
   useEffect(() => {
     fetchRegistrations();
+    
+    // Thiết lập interval để kiểm tra định kỳ (mỗi 2 phút)
+    const interval = setInterval(() => {
+      checkNewRegistrations();
+    }, 2 * 60 * 1000);
+    
+    // Dọn dẹp interval khi component bị hủy
+    return () => clearInterval(interval);
   }, []);
 
   const fetchRegistrations = async () => {
@@ -84,9 +96,46 @@ const TrainerRegistrations = () => {
       const res = await api.get('/service-registrations/my-customers');
       setRegistrations(res.data);
       setLoading(false);
+      
+      // Lưu thời gian kiểm tra hiện tại
+      setLastCheckedTime(new Date());
+      
+      // Kiểm tra số đăng ký mới (chờ xác nhận)
+      const pendingCount = res.data.filter(reg => reg.status === 'pending').length;
+      if (pendingCount > 0) {
+        // Hiển thị thông báo chỉ khi có đăng ký chờ xác nhận
+        setNewRegistrations(pendingCount);
+        setAlert(`Bạn có ${pendingCount} đăng ký mới chờ xác nhận`, 'info');
+      }
     } catch (err) {
       setAlert('Không thể tải danh sách đăng ký dịch vụ', 'error');
       setLoading(false);
+    }
+  };
+  
+  const checkNewRegistrations = async () => {
+    if (!lastCheckedTime) return;
+    
+    try {
+      const res = await api.get('/service-registrations/my-customers');
+      
+      // Lọc các đăng ký mới sau lần kiểm tra cuối cùng
+      const newPendingRegistrations = res.data.filter(reg => 
+        reg.status === 'pending' && 
+        new Date(reg.createdAt) > lastCheckedTime
+      );
+      
+      // Nếu có đăng ký mới, hiển thị thông báo
+      if (newPendingRegistrations.length > 0) {
+        setAlert(`Bạn có ${newPendingRegistrations.length} đăng ký mới chờ xác nhận`, 'info');
+        setRegistrations(res.data);
+        setNewRegistrations(res.data.filter(reg => reg.status === 'pending').length);
+      }
+      
+      // Cập nhật thời gian kiểm tra
+      setLastCheckedTime(new Date());
+    } catch (err) {
+      console.error('Lỗi khi kiểm tra đăng ký mới:', err);
     }
   };
 
@@ -180,7 +229,7 @@ const TrainerRegistrations = () => {
         status: 'approved'
       });
       setAlert('Đã xác nhận đăng ký dịch vụ thành công', 'success');
-      fetchRegistrations(); // Refresh the list
+      await fetchRegistrations(); // Refresh the list
     } catch (err) {
       setAlert(err.response?.data?.message || 'Có lỗi xảy ra khi xác nhận đăng ký', 'error');
     } finally {
@@ -211,7 +260,7 @@ const TrainerRegistrations = () => {
         rejectionReason: rejectDialog.reason
       });
       setAlert('Đã từ chối đăng ký dịch vụ', 'success');
-      fetchRegistrations(); // Refresh the list
+      await fetchRegistrations(); // Refresh the list
     } catch (err) {
       setAlert(err.response?.data?.message || 'Có lỗi xảy ra khi từ chối đăng ký', 'error');
     } finally {
@@ -249,7 +298,7 @@ const TrainerRegistrations = () => {
         completedSessions: sessions
       });
       setAlert('Đã cập nhật số buổi hoàn thành', 'success');
-      fetchRegistrations(); // Refresh the list
+      await fetchRegistrations(); // Refresh the list
     } catch (err) {
       setAlert(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật số buổi', 'error');
     } finally {
@@ -273,6 +322,17 @@ const TrainerRegistrations = () => {
           <Typography variant="h4" component="h2">
             Khách hàng đăng ký dịch vụ
           </Typography>
+          <Badge 
+            badgeContent={newRegistrations} 
+            color="error"
+            sx={{ 
+              '& .MuiBadge-badge': {
+                animation: newRegistrations > 0 ? 'pulse 1.5s infinite' : 'none'
+              }
+            }}
+          >
+            <Notifications color="action" />
+          </Badge>
         </Box>
 
         <Tabs 
@@ -289,9 +349,12 @@ const TrainerRegistrations = () => {
                 {registrations.filter(r => r.status === 'pending').length > 0 && (
                   <Chip 
                     label={registrations.filter(r => r.status === 'pending').length} 
-                    color="warning" 
+                    color="error" 
                     size="small" 
-                    sx={{ ml: 1 }} 
+                    sx={{ 
+                      ml: 1,
+                      animation: 'pulse 1.5s infinite' 
+                    }} 
                   />
                 )}
               </Box>
@@ -527,7 +590,15 @@ const RenderRegistrationList = ({
     <Grid container spacing={3}>
       {registrations.map((registration) => (
         <Grid item xs={12} key={registration._id}>
-          <Card variant="outlined">
+          <Card 
+            variant="outlined" 
+            sx={{
+              ...(registration.status === 'pending' && {
+                boxShadow: '0 0 8px rgba(255, 152, 0, 0.5)',
+                border: '1px solid #ff9800'
+              })
+            }}
+          >
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Box display="flex" alignItems="center">
@@ -550,6 +621,11 @@ const RenderRegistrationList = ({
                   icon={getStatusIcon(registration.status)}
                   label={getStatusLabel(registration.status)}
                   color={getStatusColor(registration.status)}
+                  sx={{
+                    ...(registration.status === 'pending' && {
+                      animation: 'pulse 1.5s infinite'
+                    })
+                  }}
                 />
               </Box>
 
