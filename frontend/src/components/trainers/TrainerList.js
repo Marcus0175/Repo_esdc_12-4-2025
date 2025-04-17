@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AlertContext from '../../contexts/alert/alertContext';
 import AuthContext from '../../contexts/auth/authContext';
 import api from '../../utils/api';
@@ -34,8 +34,7 @@ import {
   Add,
   Block,
   CheckCircle,
-  Schedule,
-  Person
+  FitnessCenter
 } from '@mui/icons-material';
 
 const TrainerList = () => {
@@ -43,6 +42,7 @@ const TrainerList = () => {
   const authContext = useContext(AuthContext);
   const { setAlert } = alertContext;
   const { user } = authContext;
+  const navigate = useNavigate();
 
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,6 +103,11 @@ const TrainerList = () => {
     } finally {
       setProcessingAction(false);
     }
+  };
+
+  const handleRegister = (trainerId) => {
+    // Điều hướng tới trang đăng ký dịch vụ với ID huấn luyện viên
+    navigate(`/service-registration/trainer/${trainerId}`);
   };
 
   const getDialogContent = () => {
@@ -268,29 +273,42 @@ const TrainerList = () => {
                           </Box>
                         )}
                         
-                        <Box sx={{ display: 'flex', gap: 1 }}>
+                        {isCustomer && trainer.user?.active && (
                           <Button
-                            variant="outlined"
+                            variant="contained"
                             size="small"
-                            startIcon={<Person />}
-                            component={Link}
-                            to={`/trainers/${trainer._id}`}
+                            color="primary"
+                            startIcon={<FitnessCenter />}
+                            onClick={() => handleRegister(trainer._id)}
                             sx={{ fontSize: '0.7rem', py: 0.5 }}
                           >
-                            Chi tiết
+                            Đăng ký
                           </Button>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            color="secondary"
-                            startIcon={<Schedule />}
-                            component={Link}
-                            to={`/trainers/${trainer._id}/schedule`}
-                            sx={{ fontSize: '0.7rem', py: 0.5 }}
-                          >
-                            Lịch
-                          </Button>
-                        </Box>
+                        )}
+                        
+                        {!isCustomer && (
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              component={Link}
+                              to={`/trainers/${trainer._id}`}
+                              sx={{ fontSize: '0.7rem', py: 0.5 }}
+                            >
+                              Chi tiết
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              color="secondary"
+                              component={Link}
+                              to={`/trainers/${trainer._id}/schedule`}
+                              sx={{ fontSize: '0.7rem', py: 0.5 }}
+                            >
+                              Lịch
+                            </Button>
+                          </Box>
+                        )}
                       </Box>
                     </TableCell>
                   </TableRow>

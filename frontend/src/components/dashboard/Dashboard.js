@@ -40,6 +40,8 @@ const Dashboard = () => {
   // Check if the user is admin or receptionist
   const showSidebar = user && (user.role === 'admin' || user.role === 'receptionist');
   const isAdmin = user && user.role === 'admin';
+  const isCustomer = user && user.role === 'customer';
+  const isTrainer = user && user.role === 'trainer';
 
   const Sidebar = () => (
     <Box
@@ -166,9 +168,8 @@ const Dashboard = () => {
           </>
         )}
 
-
         {/* Quản lý lịch làm việc - dành cho huấn luyện viên */}
-        {user?.role === 'trainer' && (
+        {isTrainer && (
           <>
             <Box sx={{ p: 2, pt: 3 }}>
               <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
@@ -196,6 +197,50 @@ const Dashboard = () => {
                 <ScheduleIcon />
               </ListItemIcon>
               <ListItemText primary="Quản lý lịch làm việc" />
+            </ListItemButton>
+
+            <ListItemButton 
+              component={Link} 
+              to="/trainer-registrations"
+              selected={window.location.pathname === '/trainer-registrations'}
+            >
+              <ListItemIcon>
+                <Assignment />
+              </ListItemIcon>
+              <ListItemText primary="Đăng ký của khách hàng" />
+            </ListItemButton>
+          </>
+        )}
+
+        {/* Khách hàng */}
+        {isCustomer && (
+          <>
+            <Box sx={{ p: 2, pt: 3 }}>
+              <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                DỊCH VỤ
+              </Typography>
+            </Box>
+            
+            <ListItemButton 
+              component={Link} 
+              to="/trainers"
+              selected={window.location.pathname === '/trainers'}
+            >
+              <ListItemIcon>
+                <FitnessCenter />
+              </ListItemIcon>
+              <ListItemText primary="Đăng ký huấn luyện viên" />
+            </ListItemButton>
+            
+            <ListItemButton 
+              component={Link} 
+              to="/my-registrations"
+              selected={window.location.pathname === '/my-registrations'}
+            >
+              <ListItemIcon>
+                <ListAlt />
+              </ListItemIcon>
+              <ListItemText primary="Đăng ký của tôi" />
             </ListItemButton>
           </>
         )}
@@ -578,7 +623,7 @@ const Dashboard = () => {
             Huấn luyện viên
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-            Xem danh sách huấn luyện viên và đặt lịch tập luyện
+            Xem danh sách huấn luyện viên và đăng ký dịch vụ
           </Typography>
           <Button
             variant="contained"
@@ -591,7 +636,7 @@ const Dashboard = () => {
               }
             }}
           >
-            Xem danh sách
+            Đăng ký ngay
           </Button>
         </Paper>
       </Grid>
@@ -610,15 +655,15 @@ const Dashboard = () => {
         >
           <Person sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Tài khoản của tôi
+            Đăng ký của tôi
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-            Xem và cập nhật thông tin tài khoản của bạn
+            Quản lý các đăng ký dịch vụ của bạn
           </Typography>
           <Button
             variant="contained"
             component={Link}
-            to="/profile"
+            to="/my-registrations"
             sx={{ 
               backgroundColor: 'rgba(255, 255, 255, 0.2)',
               '&:hover': {
@@ -626,7 +671,7 @@ const Dashboard = () => {
               }
             }}
           >
-            Xem thông tin
+            Xem đăng ký
           </Button>
         </Paper>
       </Grid>
@@ -649,15 +694,15 @@ const Dashboard = () => {
         >
           <People sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Khách hàng của tôi
+            Khách hàng đăng ký
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-            Xem danh sách khách hàng được gán cho bạn
+            Xem và quản lý đăng ký dịch vụ từ khách hàng
           </Typography>
           <Button
             variant="contained"
             component={Link}
-            to="/my-customers"
+            to="/trainer-registrations"
             sx={{ 
               backgroundColor: 'rgba(255, 255, 255, 0.2)',
               '&:hover': {
@@ -665,7 +710,7 @@ const Dashboard = () => {
               }
             }}
           >
-            Xem danh sách
+            Xem đăng ký
           </Button>
         </Paper>
       </Grid>
@@ -701,41 +746,6 @@ const Dashboard = () => {
             }}
           >
             Xem lịch làm việc
-          </Button>
-        </Paper>
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <Paper
-          sx={{
-            p: 3,
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            background: 'linear-gradient(135deg, #43a047 0%, #81c784 100%)',
-            color: 'white'
-          }}
-        >
-          <Person sx={{ fontSize: 50, mb: 2 }} />
-          <Typography variant="h5" gutterBottom>
-            Tài khoản của tôi
-          </Typography>
-          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-            Xem và cập nhật thông tin tài khoản của bạn
-          </Typography>
-          <Button
-            variant="contained"
-            component={Link}
-            to="/profile"
-            sx={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.3)'
-              }
-            }}
-          >
-            Xem thông tin
           </Button>
         </Paper>
       </Grid>

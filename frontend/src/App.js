@@ -23,6 +23,10 @@ import PrivateRoute from './components/common/PrivateRoute';
 import AuthContext from './contexts/auth/authContext';
 import TrainerScheduleView from './components/trainers/TrainerScheduleView';
 import TrainerDetail from './components/trainers/TrainerDetail';
+import TrainerServiceRegistration from './components/trainers/TrainerServiceRegistration';
+import ServiceRegistrationForm from './components/services/ServiceRegistrationForm';
+import MyRegistrations from './components/services/MyRegistrations';
+import TrainerRegistrations from './components/services/TrainerRegistrations';
 import AuthState from './contexts/auth/AuthState';
 import AlertState from './contexts/alert/AlertState';
 import EquipmentState from './contexts/equipment/EquipmentState';
@@ -272,6 +276,44 @@ const AppContent = () => {
               <PrivateRoute
                 component={TrainerScheduleView}
                 roles={['admin', 'receptionist', 'customer', 'trainer']}
+              />
+            }
+          />
+          
+          {/* Service Registration Routes */}
+          <Route
+            path="/service-registration/trainer/:trainerId"
+            element={
+              <PrivateRoute
+                component={TrainerServiceRegistration}
+                roles={['customer']}
+              />
+            }
+          />
+          <Route
+            path="/service-registration/:serviceId"
+            element={
+              <PrivateRoute
+                component={ServiceRegistrationForm}
+                roles={['customer']}
+              />
+            }
+          />
+          <Route
+            path="/my-registrations"
+            element={
+              <PrivateRoute
+                component={MyRegistrations}
+                roles={['customer']}
+              />
+            }
+          />
+          <Route
+            path="/trainer-registrations"
+            element={
+              <PrivateRoute
+                component={TrainerRegistrations}
+                roles={['trainer']}
               />
             }
           />
