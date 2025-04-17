@@ -1,6 +1,7 @@
-import React, { useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import AuthContext from '../../contexts/auth/authContext';
+import api from '../../utils/api';
 import {
   Box,
   Grid,
@@ -11,7 +12,9 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  useTheme
+  useTheme,
+  Chip,
+  Badge
 } from '@mui/material';
 import {
   Person,
@@ -26,7 +29,8 @@ import {
   Schedule as ScheduleIcon,
   Handyman,
   Assignment,
-  ListAlt
+  ListAlt,
+  Notifications
 } from '@mui/icons-material';
 
 
@@ -36,12 +40,32 @@ const Dashboard = () => {
   const theme = useTheme();
   const authContext = useContext(AuthContext);
   const { user } = authContext;
+  
+  // State for pending registrations (for trainer dashboard)
+  const [pendingRegistrations, setPendingRegistrations] = useState(0);
 
   // Check if the user is admin or receptionist
   const showSidebar = user && (user.role === 'admin' || user.role === 'receptionist');
   const isAdmin = user && user.role === 'admin';
   const isCustomer = user && user.role === 'customer';
   const isTrainer = user && user.role === 'trainer';
+  
+  // Fetch pending registrations for trainers
+  useEffect(() => {
+    const fetchPendingRegistrations = async () => {
+      if (isTrainer) {
+        try {
+          const res = await api.get('/service-registrations/my-customers');
+          const pendingCount = res.data.filter(reg => reg.status === 'pending').length;
+          setPendingRegistrations(pendingCount);
+        } catch (err) {
+          console.error('Lỗi khi tải đăng ký chờ xác nhận:', err);
+        }
+      }
+    };
+    
+    fetchPendingRegistrations();
+  }, [isTrainer]);
 
   const Sidebar = () => (
     <Box
@@ -205,7 +229,13 @@ const Dashboard = () => {
               selected={window.location.pathname === '/trainer-registrations'}
             >
               <ListItemIcon>
-                <Assignment />
+                <Badge
+                  badgeContent={pendingRegistrations}
+                  color="error"
+                  invisible={pendingRegistrations === 0}
+                >
+                  <Assignment />
+                </Badge>
               </ListItemIcon>
               <ListItemText primary="Đăng ký của khách hàng" />
             </ListItemButton>
@@ -678,79 +708,98 @@ const Dashboard = () => {
     </Grid>
   );
 
-  const renderTrainerDashboard = () => (
-    <Grid container spacing={4}>
-      <Grid item xs={12} md={6}>
-        <Paper
-          sx={{
-            p: 3,
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
-            color: 'white'
-          }}
-        >
-          <People sx={{ fontSize: 50, mb: 2 }} />
-          <Typography variant="h5" gutterBottom>
-            Khách hàng đăng ký
-          </Typography>
-          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-            Xem và quản lý đăng ký dịch vụ từ khách hàng
-          </Typography>
-          <Button
-            variant="contained"
-            component={Link}
-            to="/trainer-registrations"
-            sx={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.3)'
-              }
+  const renderTrainerDashboard = () => {
+    return (
+      <Grid container spacing={4}>
+        <Grid item xs={12} md={6}>
+          <Paper
+            sx={{
+              p: 3,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
+              color: 'white',
+              position: 'relative'
             }}
           >
-            Xem đăng ký
-          </Button>
-        </Paper>
-      </Grid>
-      
-      <Grid item xs={12} md={6}>
-        <Paper
-          sx={{
-            p: 3,
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            background: 'linear-gradient(135deg, #7b1fa2 0%, #ba68c8 100%)',
-            color: 'white'
-          }}
-        >
-          <Schedule sx={{ fontSize: 50, mb: 2 }} />
-          <Typography variant="h5" gutterBottom>
-            Lịch làm việc
-          </Typography>
-          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-            Quản lý lịch làm việc và giờ dạy của bạn
-          </Typography>
-          <Button
-            variant="contained"
-            component={Link}
-            to="/my-schedule"
-            sx={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.3)'
-              }
+            <People sx={{ fontSize: 50, mb: 2 }} />
+            <Typography variant="h5" gutterBottom>
+              Khách hàng đăng ký dịch vụ
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+              Xem và quản lý đăng ký dịch vụ từ khách hàng
+            </Typography>
+            
+            {/* Hiển thị số lượng đăng ký chờ xác nhận */}
+            {pendingRegistrations > 0 && (
+              <Chip
+                label={`${pendingRegistrations} đăng ký mới`}
+                color="error"
+                sx={{ 
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  fontWeight: 'bold',
+                  animation: 'pulse 1.5s infinite'
+                }}
+              />
+            )}
+            
+            <Button
+              variant="contained"
+              component={Link}
+              to="/trainer-registrations"
+              sx={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.3)'
+                }
+              }}
+            >
+              Xem đăng ký
+            </Button>
+          </Paper>
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <Paper
+            sx={{
+              p: 3,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: 'linear-gradient(135deg, #7b1fa2 0%, #ba68c8 100%)',
+              color: 'white'
             }}
           >
-            Xem lịch làm việc
-          </Button>
-        </Paper>
+            <Schedule sx={{ fontSize: 50, mb: 2 }} />
+            <Typography variant="h5" gutterBottom>
+              Lịch làm việc
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+              Quản lý lịch làm việc và giờ dạy của bạn
+            </Typography>
+            <Button
+              variant="contained"
+              component={Link}
+              to="/my-schedule"
+              sx={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.3)'
+                }
+              }}
+            >
+              Xem lịch làm việc
+            </Button>
+          </Paper>
+        </Grid>
       </Grid>
-    </Grid>
-  );
+    );
+  };
 
   // Render appropriate dashboard based on user role
   const renderDashboardContent = () => {
