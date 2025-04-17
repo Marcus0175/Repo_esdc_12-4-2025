@@ -46,6 +46,7 @@ const TrainerServiceRegistration = () => {
   // Dữ liệu
   const [trainer, setTrainer] = useState(null);
   const [services, setServices] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
   const [workSchedules, setWorkSchedules] = useState([]);
 
   // Form data
@@ -59,52 +60,60 @@ const TrainerServiceRegistration = () => {
   const [totalPrice, setTotalPrice] = useState(0);
 
   useEffect(() => {
-    // Cập nhật phương thức fetchData trong TrainerServiceRegistration.js
-const fetchData = async () => {
-  try {
-    // Tải thông tin huấn luyện viên
-    const trainerRes = await api.get(`/users/trainers/${trainerId}`);
-    setTrainer(trainerRes.data);
-    
-    // Tải lịch làm việc của huấn luyện viên
-    const schedulesRes = await api.get(`/work-schedules/available/${trainerId}`);
-    setWorkSchedules(schedulesRes.data);
-    
-    // Tải danh sách dịch vụ
-    const servicesRes = await api.get('/services');
-    
-    // Lọc các dịch vụ hoạt động
-    const activeServices = servicesRes.data.filter(service => service.isActive);
-    
-    // Lọc dịch vụ phù hợp với chuyên môn của huấn luyện viên
-    if (trainerRes.data.specializations && trainerRes.data.specializations.length > 0) {
-      // Tạo một mảng các từ khóa từ chuyên môn để so sánh
-      const specializations = trainerRes.data.specializations.map(spec => spec.toLowerCase());
-      
-      // Lọc dịch vụ dựa trên tên và mô tả có liên quan đến chuyên môn
-      const filteredServices = activeServices.filter(service => {
-        const serviceName = service.name.toLowerCase();
-        const serviceDesc = service.description.toLowerCase();
+    const fetchData = async () => {
+      try {
+        // Load trainer information
+        const trainerRes = await api.get(`/users/trainers/${trainerId}`);
+        setTrainer(trainerRes.data);
         
-        // Kiểm tra xem tên hoặc mô tả dịch vụ có chứa bất kỳ chuyên môn nào
-        return specializations.some(spec => 
-          serviceName.includes(spec) || serviceDesc.includes(spec)
-        );
-      });
-      
-      // Nếu không tìm thấy dịch vụ phù hợp, hiển thị tất cả dịch vụ hoạt động
-      setServices(filteredServices.length > 0 ? filteredServices : activeServices);
-    } else {
-      // Nếu huấn luyện viên không có chuyên môn, hiển thị tất cả dịch vụ hoạt động
-      setServices(activeServices);
-    }
-    
-    setLoading(false);
-  } catch (err) {
-    setAlert('Không thể tải thông tin cần thiết', 'error');
-    navigate('/trainers');
-  }
-};
+        // Load trainer's available work schedules
+        const schedulesRes = await api.get(`/work-schedules/available/${trainerId}`);
+        setWorkSchedules(schedulesRes.data);
+        
+        // Load all services
+        const servicesRes = await api.get('/services');
+        
+        // Filter active services
+        const activeServices = servicesRes.data.filter(service => service.isActive);
+        setServices(activeServices);
+        
+        // If trainer has specializations, mark services that match those specializations
+        if (trainerRes.data.specializations && trainerRes.data.specializations.length > 0) {
+          // Convert specializations to lowercase for case-insensitive comparison
+          const specializations = trainerRes.data.specializations.map(spec => 
+            spec.toLowerCase()
+          );
+          
+          // Mark each service with a relevance flag based on trainer specializations
+          const servicesWithRelevance = activeServices.map(service => {
+            const isRelevant = specializations.some(spec => 
+              service.name.toLowerCase().includes(spec) || 
+              service.description.toLowerCase().includes(spec)
+            );
+            
+            return {
+              ...service,
+              isRelevant
+            };
+          });
+          
+          // Sort to show relevant services first
+          servicesWithRelevance.sort((a, b) => {
+            if (a.isRelevant && !b.isRelevant) return -1;
+            if (!a.isRelevant && b.isRelevant) return 1;
+            return 0;
+          });
+          
+          setServices(servicesWithRelevance);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setAlert('Không thể tải thông tin cần thiết', 'error');
+        navigate('/trainers');
+      }
+    };
     
     fetchData();
   }, [trainerId, navigate, setAlert]);
@@ -295,21 +304,32 @@ const fetchData = async () => {
                       variant={selectedService === service._id ? "outlined" : "elevation"}
                       sx={{ 
                         cursor: 'pointer',
-                        border: selectedService === service._id ? 2 : 0,
-                        borderColor: selectedService === service._id ? 'primary.main' : 'transparent',
+                        border: selectedService === service._id ? 2 : service.isRelevant ? 1 : 0,
+                        borderColor: selectedService === service._id ? 'primary.main' : service.isRelevant ? 'primary.light' : 'transparent',
+                        backgroundColor: service.isRelevant ? 'rgba(25, 118, 210, 0.04)' : 'inherit',
                         '&:hover': {
                           boxShadow: 3
                         },
-                        height: '100%', // Đảm bảo các thẻ có chiều cao đồng đều
+                        height: '100%',
                         display: 'flex',
                         flexDirection: 'column'
                       }}
                       onClick={() => setSelectedService(service._id)}
                     >
                       <CardContent sx={{ flexGrow: 1 }}>
-                        <Typography variant="h6">
-                          {service.name}
-                        </Typography>
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                          <Typography variant="h6">
+                            {service.name}
+                          </Typography>
+                          {service.isRelevant && (
+                            <Chip 
+                              size="small" 
+                              color="primary" 
+                              label="Phù hợp chuyên môn"
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                           {service.description}
                         </Typography>
@@ -334,7 +354,7 @@ const fetchData = async () => {
                         </Typography>
                         
                         {/* Hiển thị các từ khóa chuyên môn liên quan */}
-                        {trainer?.specializations && (
+                        {trainer?.specializations && service.isRelevant && (
                           <Box sx={{ mt: 1 }}>
                             {trainer.specializations
                               .filter(spec => 
