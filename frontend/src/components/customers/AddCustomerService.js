@@ -202,39 +202,66 @@ const AddCustomerService = () => {
 
   // Handle form submission
   // Trong AddCustomerService.js, tại hàm handleSubmit
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (!validateForm()) {
-    return;
-  }
-  
-  setSubmitting(true);
-  
-  try {
-    // Đảm bảo dữ liệu được gửi đúng định dạng
-    const serviceData = {
-      ...formData,
-      // Đảm bảo startDate là chuỗi ISO nếu là đối tượng Date
-      startDate: formData.startDate instanceof Date ? 
-                 formData.startDate.toISOString() : 
-                 formData.startDate,
-      // Đảm bảo numberOfSessions là số nguyên
-      numberOfSessions: parseInt(formData.numberOfSessions),
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
-    console.log('Gửi dữ liệu:', serviceData); // Log để debug
+    if (!validateForm()) {
+      return;
+    }
     
-    await addCustomerService(customerId, serviceData);
-    setAlert('Thêm dịch vụ cho khách hàng thành công', 'success');
-    navigate(`/customers/${customerId}/services`);
-  } catch (err) {
-    // Log lỗi chi tiết để debug
-    console.error('Chi tiết lỗi:', err.response?.data || err.message);
-    setAlert(err.response?.data?.message || 'Lỗi khi thêm dịch vụ', 'error');
-    setSubmitting(false);
-  }
-};
+    // Kiểm tra thêm nếu không có lịch nào được chọn
+    if (selectedSchedules.length === 0) {
+      setAlert('Vui lòng chọn ít nhất một lịch làm việc', 'error');
+      return;
+    }
+    
+    setSubmitting(true);
+    
+    try {
+      // Nếu có nhiều lịch được chọn, tạo nhiều đăng ký
+      if (selectedSchedules.length > 1) {
+        // Tạo một promise cho mỗi lịch
+        const registrationPromises = selectedSchedules.map(scheduleId => {
+          const serviceData = {
+            trainerId: formData.trainerId,
+            serviceId: formData.serviceId,
+            workScheduleId: scheduleId,  // Quan trọng: sử dụng ID lịch từ mảng đã chọn
+            startDate: formData.startDate instanceof Date ? 
+                     formData.startDate.toISOString() : 
+                     formData.startDate,
+            numberOfSessions: 1,  // Mỗi lịch tương ứng với 1 buổi
+            notes: formData.notes
+          };
+          
+          return addCustomerService(customerId, serviceData);
+        });
+        
+        // Đợi tất cả đăng ký được xử lý
+        await Promise.all(registrationPromises);
+      } else {
+        // Nếu chỉ có một lịch, gửi một request duy nhất
+        const serviceData = {
+          trainerId: formData.trainerId,
+          serviceId: formData.serviceId,
+          workScheduleId: selectedSchedules[0],  // Lịch duy nhất đã chọn
+          startDate: formData.startDate instanceof Date ? 
+                   formData.startDate.toISOString() : 
+                   formData.startDate,
+          numberOfSessions: 1,
+          notes: formData.notes
+        };
+        
+        await addCustomerService(customerId, serviceData);
+      }
+      
+      setAlert('Thêm dịch vụ cho khách hàng thành công', 'success');
+      navigate(`/customers/${customerId}/services`);
+    } catch (err) {
+      console.error('Chi tiết lỗi:', err.response?.data || err.message);
+      setAlert(err.response?.data?.message || 'Lỗi khi thêm dịch vụ', 'error');
+      setSubmitting(false);
+    }
+  };
 
   // Format date
   const formatDate = (dateString) => {
