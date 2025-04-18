@@ -25,7 +25,6 @@ import {
   InputAdornment
 } from '@mui/material';
 import {
-  Delete,
   MarkEmailRead,
   Search,
   ArrowBack
@@ -46,15 +45,13 @@ const FeedbackList = () => {
     loading, 
     error, 
     getAllFeedback, 
-    markFeedbackAsRead, 
-    deleteFeedback 
+    markFeedbackAsRead 
   } = feedbackContext;
   const { setAlert } = alertContext;
   
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [loadingAction, setLoadingAction] = useState(false);
   
   useEffect(() => {
@@ -76,16 +73,6 @@ const FeedbackList = () => {
     setDialogOpen(false);
   };
   
-  const handleOpenDeleteDialog = (e, feedback) => {
-    e.stopPropagation();
-    setSelectedFeedback(feedback);
-    setDeleteDialogOpen(true);
-  };
-  
-  const handleCloseDeleteDialog = () => {
-    setDeleteDialogOpen(false);
-  };
-  
   const handleMarkAsRead = async (e, id) => {
     e.stopPropagation();
     try {
@@ -93,21 +80,6 @@ const FeedbackList = () => {
       setAlert('Đã đánh dấu phản hồi là đã đọc', 'success');
     } catch (err) {
       console.error(err);
-    }
-  };
-  
-  const handleDelete = async () => {
-    if (!selectedFeedback) return;
-    
-    setLoadingAction(true);
-    try {
-      await deleteFeedback(selectedFeedback._id);
-      setAlert('Xóa phản hồi thành công', 'success');
-      handleCloseDeleteDialog();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingAction(false);
     }
   };
   
@@ -276,15 +248,6 @@ const FeedbackList = () => {
                         <MarkEmailRead />
                       </IconButton>
                     )}
-                    <IconButton 
-                      edge="end" 
-                      aria-label="delete"
-                      onClick={(e) => handleOpenDeleteDialog(e, item)}
-                      title="Xóa phản hồi"
-                      color="error"
-                    >
-                      <Delete />
-                    </IconButton>
                   </Box>
                 </ListItem>
               </React.Fragment>
@@ -336,32 +299,6 @@ const FeedbackList = () => {
             </DialogActions>
           </>
         )}
-      </Dialog>
-      
-      {/* Dialog xác nhận xóa */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleCloseDeleteDialog}
-      >
-        <DialogTitle>Xác nhận xóa</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Bạn có chắc chắn muốn xóa phản hồi này không? Hành động này không thể hoàn tác.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteDialog} disabled={loadingAction}>
-            Hủy
-          </Button>
-          <Button 
-            onClick={handleDelete} 
-            color="error" 
-            variant="contained"
-            disabled={loadingAction}
-          >
-            {loadingAction ? <CircularProgress size={24} /> : 'Xóa'}
-          </Button>
-        </DialogActions>
       </Dialog>
     </Container>
   );

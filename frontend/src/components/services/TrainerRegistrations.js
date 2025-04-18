@@ -34,7 +34,6 @@ import {
   Schedule,
   FitnessCenter,
   Person,
-  Add,
   CalendarMonth,
   ExpandMore,
   ExpandLess,
@@ -76,7 +75,7 @@ const TrainerRegistrations = () => {
   // Dialog states
   const [approveDialog, setApproveDialog] = useState({ open: false, registration: null });
   const [rejectDialog, setRejectDialog] = useState({ open: false, registration: null, reason: '' });
-  const [sessionDialog, setSessionDialog] = useState({ open: false, registration: null, sessions: 0 });
+  // Đã loại bỏ state sessionDialog vì không cần nữa
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -269,41 +268,20 @@ const TrainerRegistrations = () => {
     }
   };
 
-  // Handle update completed sessions
-  const handleOpenSessionDialog = (registration) => {
-    setSessionDialog({ 
-      open: true, 
-      registration, 
-      sessions: registration.completedSessions 
-    });
-  };
-
-  const handleCloseSessionDialog = () => {
-    setSessionDialog({ open: false, registration: null, sessions: 0 });
-  };
-
-  const handleUpdateSessions = async () => {
-    if (!sessionDialog.registration) return;
-
-    // Validate sessions count
-    const sessions = parseInt(sessionDialog.sessions);
-    if (isNaN(sessions) || sessions < 0 || sessions > sessionDialog.registration.numberOfSessions) {
-      setAlert(`Số buổi phải từ 0 đến ${sessionDialog.registration.numberOfSessions}`, 'error');
-      return;
-    }
-
+  // Đánh dấu hoàn thành dịch vụ
+  const handleCompleteService = async (registration) => {
     setProcessing(true);
     try {
-      await api.put(`/service-registrations/${sessionDialog.registration._id}/sessions`, {
-        completedSessions: sessions
+      // Cập nhật số buổi đã hoàn thành bằng tổng số buổi (đánh dấu đã hoàn thành tất cả)
+      await api.put(`/service-registrations/${registration._id}/sessions`, {
+        completedSessions: registration.numberOfSessions
       });
-      setAlert('Đã cập nhật số buổi hoàn thành', 'success');
+      setAlert('Đã đánh dấu dịch vụ hoàn thành', 'success');
       await fetchRegistrations(); // Refresh the list
     } catch (err) {
-      setAlert(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật số buổi', 'error');
+      setAlert(err.response?.data?.message || 'Có lỗi xảy ra khi hoàn thành dịch vụ', 'error');
     } finally {
       setProcessing(false);
-      handleCloseSessionDialog();
     }
   };
 
@@ -371,7 +349,8 @@ const TrainerRegistrations = () => {
             handleToggleExpand={handleToggleExpand}
             handleOpenApproveDialog={handleOpenApproveDialog}
             handleOpenRejectDialog={handleOpenRejectDialog}
-            handleOpenSessionDialog={handleOpenSessionDialog}
+            handleCompleteService={handleCompleteService}
+            processing={processing}
           />
         </TabPanel>
 
@@ -382,7 +361,8 @@ const TrainerRegistrations = () => {
             handleToggleExpand={handleToggleExpand}
             handleOpenApproveDialog={handleOpenApproveDialog}
             handleOpenRejectDialog={handleOpenRejectDialog}
-            handleOpenSessionDialog={handleOpenSessionDialog}
+            handleCompleteService={handleCompleteService}
+            processing={processing}
           />
         </TabPanel>
 
@@ -393,7 +373,8 @@ const TrainerRegistrations = () => {
             handleToggleExpand={handleToggleExpand}
             handleOpenApproveDialog={handleOpenApproveDialog}
             handleOpenRejectDialog={handleOpenRejectDialog}
-            handleOpenSessionDialog={handleOpenSessionDialog}
+            handleCompleteService={handleCompleteService}
+            processing={processing}
           />
         </TabPanel>
 
@@ -404,7 +385,8 @@ const TrainerRegistrations = () => {
             handleToggleExpand={handleToggleExpand}
             handleOpenApproveDialog={handleOpenApproveDialog}
             handleOpenRejectDialog={handleOpenRejectDialog}
-            handleOpenSessionDialog={handleOpenSessionDialog}
+            handleCompleteService={handleCompleteService}
+            processing={processing}
           />
         </TabPanel>
       </Paper>
@@ -473,50 +455,7 @@ const TrainerRegistrations = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Update Sessions Dialog */}
-      <Dialog
-        open={sessionDialog.open}
-        onClose={handleCloseSessionDialog}
-      >
-        <DialogTitle>Cập nhật số buổi hoàn thành</DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            Cập nhật số buổi đã hoàn thành cho khách hàng{' '}
-            <strong>{sessionDialog.registration?.customer?.user?.fullName}</strong>:
-          </DialogContentText>
-          <TextField
-            autoFocus
-            fullWidth
-            label="Số buổi đã hoàn thành"
-            type="number"
-            value={sessionDialog.sessions}
-            onChange={(e) => setSessionDialog({ 
-              ...sessionDialog, 
-              sessions: Math.max(0, Math.min(parseInt(e.target.value) || 0, sessionDialog.registration?.numberOfSessions || 0)) 
-            })}
-            InputProps={{
-              inputProps: { 
-                min: 0, 
-                max: sessionDialog.registration?.numberOfSessions || 0 
-              }
-            }}
-            helperText={`Tối đa: ${sessionDialog.registration?.numberOfSessions || 0} buổi`}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseSessionDialog} disabled={processing}>
-            Hủy
-          </Button>
-          <Button 
-            onClick={handleUpdateSessions} 
-            color="primary" 
-            variant="contained"
-            disabled={processing}
-          >
-            {processing ? <CircularProgress size={24} color="inherit" /> : 'Cập nhật'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Đã loại bỏ Update Sessions Dialog và thay thế bằng logic đánh dấu hoàn thành */}
     </Container>
   );
 };
@@ -528,7 +467,8 @@ const RenderRegistrationList = ({
   handleToggleExpand,
   handleOpenApproveDialog,
   handleOpenRejectDialog,
-  handleOpenSessionDialog
+  handleCompleteService,
+  processing
 }) => {
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -770,11 +710,12 @@ const RenderRegistrationList = ({
                 {registration.status === 'approved' && (
                   <Button
                     variant="contained"
-                    color="primary"
-                    startIcon={<Add />}
-                    onClick={() => handleOpenSessionDialog(registration)}
+                    color="success"
+                    startIcon={<Check />}
+                    onClick={() => handleCompleteService(registration)}
+                    disabled={processing}
                   >
-                    Cập nhật buổi tập
+                    {processing ? <CircularProgress size={24} color="inherit" /> : 'Đánh dấu hoàn thành'}
                   </Button>
                 )}
               </Box>
