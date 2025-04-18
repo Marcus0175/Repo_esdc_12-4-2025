@@ -35,7 +35,8 @@ import {
   Add,
   Block,
   CheckCircle,
-  LockReset
+  LockReset,
+  FitnessCenter
 } from '@mui/icons-material';
 import ResetPasswordDialog from '../common/ResetPasswordDialog';
 
@@ -279,6 +280,19 @@ const CustomerList = () => {
                       <TableCell>
                         {canManageCustomers && (
                           <>
+                            {/* Các thao tác khác */}
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              color="primary"
+                              component={Link}
+                              to={`/customers/${customer._id}/services`}
+                              sx={{ fontSize: '0.7rem', py: 0.5, mr: 1 }}
+                              startIcon={<FitnessCenter />}
+                            >
+                              Quản lý dịch vụ
+                            </Button>
+                            {/* Các IconButton hiện tại */}
                             <IconButton
                               color="primary"
                               component={Link}

@@ -38,6 +38,9 @@ import ServiceState from './contexts/service/ServiceState';
 import FeedbackState from './contexts/feedback/FeedbackState';
 import FeedbackList from './components/feedback/FeedbackList';
 import MyFeedback from './components/feedback/MyFeedback';
+import CustomerServiceList from './components/customers/CustomerServiceList';
+import AddCustomerService from './components/customers/AddCustomerService';
+import CustomerServiceState from './contexts/customerService/CustomerServiceState';
 const AppContent = () => {
   const authContext = useContext(AuthContext);
   const { loadUser } = authContext;
@@ -218,6 +221,26 @@ const AppContent = () => {
             }
           />
           
+            {/* Customer Service Management Routes */}
+<Route
+  path="/customers/:customerId/services"
+  element={
+    <PrivateRoute
+      component={CustomerServiceList}
+      roles={['admin', 'receptionist']}
+    />
+  }
+/>
+<Route
+  path="/customers/:customerId/services/add"
+  element={
+    <PrivateRoute
+      component={AddCustomerService}
+      roles={['admin', 'receptionist']}
+    />
+  }
+/>
+
           {/* Maintenance Management Routes */}
           <Route
             path="/maintenance"
@@ -417,12 +440,14 @@ const App = () => {
           <ScheduleState>
             <ServiceState>
               <FeedbackState>
-                <ThemeProvider theme={theme}>
-                  <CssBaseline />
-                  <Router>
-                    <AppContent />
-                  </Router>
-                </ThemeProvider>
+                <CustomerServiceState> 
+                  <ThemeProvider theme={theme}>
+                    <CssBaseline />
+                    <Router>
+                      <AppContent />
+                    </Router>
+                  </ThemeProvider>
+                </CustomerServiceState> 
               </FeedbackState>
             </ServiceState>
           </ScheduleState>
