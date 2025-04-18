@@ -1,108 +1,139 @@
-import React, { useContext, useState } from 'react';
+// Cập nhật component Navbar
+import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import AuthContext from '../../contexts/auth/authContext';
 import {
   AppBar,
-  Box,
   Toolbar,
   Typography,
+  Button,
   IconButton,
   Menu,
   MenuItem,
-  ListItemIcon,
-  ListItemText,
   Avatar,
-  Divider,
+  Box,
+  Tooltip,
+  Badge
 } from '@mui/material';
-import {
-  Person,
-  ExitToApp,
-  KeyboardArrowDown,
-  FitnessCenter,
-} from '@mui/icons-material';
+import { AccountCircle, Notifications, ExitToApp, RateReview } from '@mui/icons-material';
+import AuthContext from '../../contexts/auth/authContext';
+import FeedbackContext from '../../contexts/feedback/feedbackContext';
 
 const Navbar = () => {
-  const navigate = useNavigate();
   const authContext = useContext(AuthContext);
-  const { user, logout } = authContext;
+  const feedbackContext = useContext(FeedbackContext);
+  const { isAuthenticated, logout, user } = authContext;
+  const { unreadCount, getUnreadCount } = feedbackContext;
+  
+  const navigate = useNavigate();
+  
   const [anchorEl, setAnchorEl] = useState(null);
-
-  const handleMenuOpen = (event) => {
+  
+  // Lấy số lượng phản hồi chưa đọc khi component mount
+  useEffect(() => {
+    if (isAuthenticated && (user?.role === 'admin' || user?.role === 'receptionist')) {
+      getUnreadCount();
+    }
+  }, [isAuthenticated, user, getUnreadCount]);
+  
+  const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleMenuClose = () => {
+  const handleClose = () => {
     setAnchorEl(null);
   };
 
   const handleLogout = () => {
-    // Trước tiên đóng menu
-    handleMenuClose();
-    
-    // Gọi hàm logout với callback để chuyển hướng sau khi state đã cập nhật
     logout(() => {
-      // Chuyển hướng đến trang đăng nhập sau khi đã logout
-      navigate('/login', { replace: true });
+      navigate('/login');
     });
+  };
+  
+  // Thêm nút xem phản hồi dành cho admin
+  const renderFeedbackButton = () => {
+    if (isAuthenticated && (user?.role === 'admin' || user?.role === 'receptionist')) {
+      return (
+        <Tooltip title="Phản hồi từ khách hàng">
+          <IconButton
+            color="inherit"
+            component={Link}
+            to="/admin/feedback"
+          >
+            <Badge badgeContent={unreadCount} color="error">
+              <RateReview />
+            </Badge>
+          </IconButton>
+        </Tooltip>
+      );
+    }
+    return null;
   };
 
   return (
-    <AppBar
-      position="fixed"
-      sx={{
-        zIndex: (theme) => theme.zIndex.drawer + 1,
-        backgroundColor: '#1976d2'
-      }}
-    >
-      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <Typography variant="h6" component={Link} to="/" sx={{ color: 'white', textDecoration: 'none' }}>
-          Family Gym
+    <AppBar position="fixed">
+      <Toolbar>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>
+            Family Gym
+          </Link>
         </Typography>
-        {user && (
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              cursor: 'pointer' 
-            }}
-            onClick={handleMenuOpen}
-          >
-            <Typography sx={{ mr: 1 }}>Xin chào, {user.fullName || 'System Administrator'}</Typography>
-            <Avatar sx={{ bgcolor: '#1565c0', width: 32, height: 32 }}>
-              <Person />
-            </Avatar>
-            <KeyboardArrowDown sx={{ ml: 0.5, color: 'white' }} />
+
+        {isAuthenticated ? (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {renderFeedbackButton()}
+            
+            <Tooltip title="Tài khoản">
+              <IconButton
+                size="large"
+                aria-label="account"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                onClick={handleMenu}
+                color="inherit"
+              >
+                {user && user.profileImage ? (
+                  <Avatar 
+                    src={`http://localhost:5000${user.profileImage}`} 
+                    alt={user.fullName}
+                    sx={{ width: 32, height: 32 }}
+                  />
+                ) : (
+                  <AccountCircle />
+                )}
+              </IconButton>
+            </Tooltip>
+
+            <Menu
+              id="menu-appbar"
+              anchorEl={anchorEl}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              open={Boolean(anchorEl)}
+              onClose={handleClose}
+            >
+              <MenuItem disabled>
+                <Typography variant="body2">
+                  {user && user.fullName} ({user && user.role})
+                </Typography>
+              </MenuItem>
+              <MenuItem onClick={handleLogout}>
+                <ExitToApp fontSize="small" sx={{ mr: 1 }} />
+                Đăng xuất
+              </MenuItem>
+            </Menu>
           </Box>
+        ) : (
+          <Button color="inherit" component={Link} to="/login">
+            Đăng nhập
+          </Button>
         )}
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-          PaperProps={{
-            elevation: 0,
-            sx: {
-              overflow: 'visible',
-              filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
-              mt: 1.5,
-            },
-          }}
-        >
-          {/* Menu item đăng xuất */}
-          <MenuItem onClick={handleLogout}>
-            <ListItemIcon>
-              <ExitToApp fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Đăng xuất</ListItemText>
-          </MenuItem>
-        </Menu>
       </Toolbar>
     </AppBar>
   );

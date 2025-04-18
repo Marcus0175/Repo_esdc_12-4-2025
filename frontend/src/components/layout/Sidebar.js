@@ -125,7 +125,7 @@ const Sidebar = ({ open, onClose }) => {
       <Box sx={{ padding: 2, textAlign: 'center' }}>
         <FitnessCenter fontSize="large" />
         <Box sx={{ mt: 1, fontWeight: 'bold' }}>
-          Gym Management
+          Family Gym
         </Box>
       </Box>
       <Divider />

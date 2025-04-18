@@ -30,7 +30,8 @@ import {
   Handyman,
   Assignment,
   ListAlt,
-  Notifications
+  Notifications,
+  RateReview
 } from '@mui/icons-material';
 
 const SIDEBAR_WIDTH = 280;
@@ -854,6 +855,42 @@ const Dashboard = () => {
             }}
           >
             Xem đăng ký
+          </Button>
+        </Paper>
+      </Grid>
+      
+      {/* Thêm mới - Phần phản hồi */}
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #ff9800 0%, #ffb74d 100%)',
+            color: 'white'
+          }}
+        >
+          <RateReview sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Đóng góp ý kiến
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Chia sẻ ý kiến của bạn để chúng tôi phục vụ bạn tốt hơn
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/feedback"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Gửi phản hồi
           </Button>
         </Paper>
       </Grid>

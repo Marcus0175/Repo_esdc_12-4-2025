@@ -35,7 +35,9 @@ import AlertState from './contexts/alert/AlertState';
 import EquipmentState from './contexts/equipment/EquipmentState';
 import ScheduleState from './contexts/schedule/ScheduleState';
 import ServiceState from './contexts/service/ServiceState';
-
+import FeedbackState from './contexts/feedback/FeedbackState';
+import FeedbackList from './components/feedback/FeedbackList';
+import MyFeedback from './components/feedback/MyFeedback';
 const AppContent = () => {
   const authContext = useContext(AuthContext);
   const { loadUser } = authContext;
@@ -158,6 +160,25 @@ const AppContent = () => {
               />
             }
           />
+          <Route
+    path="/feedback"
+    element={
+      <PrivateRoute
+        component={MyFeedback}
+        roles={['customer']}
+      />
+    }
+  />
+  
+  <Route
+    path="/admin/feedback"
+    element={
+      <PrivateRoute
+        component={FeedbackList}
+        roles={['admin', 'receptionist']}
+      />
+    }
+  />
           
           {/* Equipment Management Routes */}
           <Route
@@ -395,12 +416,14 @@ const App = () => {
         <EquipmentState>
           <ScheduleState>
             <ServiceState>
-              <ThemeProvider theme={theme}>
-                <CssBaseline />
-                <Router>
-                  <AppContent />
-                </Router>
-              </ThemeProvider>
+              <FeedbackState>
+                <ThemeProvider theme={theme}>
+                  <CssBaseline />
+                  <Router>
+                    <AppContent />
+                  </Router>
+                </ThemeProvider>
+              </FeedbackState>
             </ServiceState>
           </ScheduleState>
         </EquipmentState>
