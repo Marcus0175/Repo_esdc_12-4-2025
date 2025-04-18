@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthContext from '../../contexts/auth/authContext';
 import AlertContext from '../../contexts/alert/alertContext';
 import {
@@ -16,11 +16,15 @@ import { LockOutlined } from '@mui/icons-material';
 const Login = () => {
   const authContext = useContext(AuthContext);
   const alertContext = useContext(AlertContext);
+  const location = useLocation();
 
   const { login, error, clearErrors, isAuthenticated } = authContext;
   const { setAlert } = alertContext;
 
   const navigate = useNavigate();
+  
+  // Get the intended destination from location state, or default to dashboard
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const [formData, setFormData] = useState({
     username: '',
@@ -31,14 +35,14 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate(from);
     }
 
     if (error) {
       setAlert(error, 'error');
       clearErrors();
     }
-  }, [error, isAuthenticated, setAlert, clearErrors, navigate]);
+  }, [error, isAuthenticated, setAlert, clearErrors, navigate, from]);
 
   const onChange = e => 
     setFormData({ ...formData, [e.target.name]: e.target.value });

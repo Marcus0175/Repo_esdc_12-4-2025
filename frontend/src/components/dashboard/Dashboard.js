@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthContext from '../../contexts/auth/authContext';
 import api from '../../utils/api';
 import {
@@ -33,13 +33,13 @@ import {
   Notifications
 } from '@mui/icons-material';
 
-
 const SIDEBAR_WIDTH = 280;
 
 const Dashboard = () => {
   const theme = useTheme();
   const authContext = useContext(AuthContext);
   const { user } = authContext;
+  const location = useLocation();
   
   // State for pending registrations (for trainer dashboard)
   const [pendingRegistrations, setPendingRegistrations] = useState(0);
@@ -67,264 +67,399 @@ const Dashboard = () => {
     fetchPendingRegistrations();
   }, [isTrainer]);
 
-  const Sidebar = () => (
-    <Box
-      sx={{
-        width: SIDEBAR_WIDTH,
-        flexShrink: 0,
-        borderRight: `1px solid ${theme.palette.divider}`,
-        height: '100vh',
-        position: 'fixed',
-        left: 0,
-        top: 64, // Height of AppBar
-        backgroundColor: theme.palette.background.paper,
-        overflowY: 'auto'
-      }}
-    >
-      <List component="nav">
-        <ListItemButton 
-          component={Link} 
-          to="/dashboard"
-          selected={window.location.pathname === '/dashboard'}
-        >
-          <ListItemIcon>
-            <DashboardIcon />
-          </ListItemIcon>
-          <ListItemText primary="Dashboard" />
-        </ListItemButton>
+  const Sidebar = () => {
+    // Function to determine if a path is active
+    const isActive = (path) => {
+      if (path === '/dashboard' && location.pathname === '/dashboard') {
+        return true;
+      }
+      if (path !== '/dashboard' && location.pathname.startsWith(path)) {
+        return true;
+      }
+      return false;
+    };
 
-        <Box sx={{ p: 2, pt: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
-            QUẢN LÝ KHÁCH HÀNG
-          </Typography>
-        </Box>
-        
-        <ListItemButton 
-          component={Link} 
-          to="/customers"
-          selected={window.location.pathname === '/customers'}
-        >
-          <ListItemIcon>
-            <ListIcon />
-          </ListItemIcon>
-          <ListItemText primary="Danh sách khách hàng" />
-        </ListItemButton>
-        <ListItemButton 
-          component={Link} 
-          to="/customers/add"
-          selected={window.location.pathname === '/customers/add'}
-        >
-          <ListItemIcon>
-            <PersonAdd />
-          </ListItemIcon>
-          <ListItemText primary="Thêm khách hàng mới" />
-        </ListItemButton>
+    // Base styles for sidebar items
+    const linkStyles = {
+      textDecoration: 'none',
+      color: 'inherit',
+      display: 'block',
+      width: '100%'
+    };
 
-        <Box sx={{ p: 2, pt: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
-            QUẢN LÝ HUẤN LUYỆN VIÊN
-          </Typography>
-        </Box>
-        
-        <ListItemButton 
-          component={Link} 
-          to="/trainers"
-          selected={window.location.pathname === '/trainers'}
-        >
-          <ListItemIcon>
-            <ListIcon />
-          </ListItemIcon>
-          <ListItemText primary="Danh sách huấn luyện viên" />
-        </ListItemButton>
-        <ListItemButton 
-          component={Link} 
-          to="/trainers/add"
-          selected={window.location.pathname === '/trainers/add'}
-        >
-          <ListItemIcon>
-            <PersonAdd />
-          </ListItemIcon>
-          <ListItemText primary="Thêm huấn luyện viên mới" />
-        </ListItemButton>
+    // Active item styles
+    const activeItemStyles = {
+      backgroundColor: theme.palette.action.selected,
+      borderLeft: `4px solid ${theme.palette.primary.main}`,
+      paddingLeft: '12px'
+    };
 
-        {(isAdmin || user?.role === 'receptionist') && (
-          <>
-            <Box sx={{ p: 2, pt: 3 }}>
-              <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
-                QUẢN LÝ CƠ SỞ VẬT CHẤT
-              </Typography>
-            </Box>
-            
+    // Normal item styles
+    const normalItemStyles = {
+      borderLeft: '4px solid transparent',
+      paddingLeft: '16px'
+    };
+
+    return (
+      <Box
+        sx={{
+          width: SIDEBAR_WIDTH,
+          flexShrink: 0,
+          borderRight: `1px solid ${theme.palette.divider}`,
+          height: '100vh',
+          position: 'fixed',
+          left: 0,
+          top: 64, // Height of AppBar
+          backgroundColor: theme.palette.background.paper,
+          overflowY: 'auto',
+          transition: theme.transitions.create(['width', 'left'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
+          boxShadow: '0 0 10px rgba(0, 0, 0, 0.05)'
+        }}
+      >
+        <List component="nav">
+          <Link to="/dashboard" style={linkStyles}>
             <ListItemButton 
-              component={Link} 
-              to="/equipment"
-              selected={window.location.pathname === '/equipment'}
+              sx={{
+                ...isActive('/dashboard') ? activeItemStyles : normalItemStyles,
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
+                transition: 'all 0.2s ease-in-out'
+              }}
             >
               <ListItemIcon>
-                <Handyman />
+                <DashboardIcon color={isActive('/dashboard') ? "primary" : "inherit"} />
               </ListItemIcon>
-              <ListItemText primary="Danh sách thiết bị" />
+              <ListItemText primary="Dashboard" />
             </ListItemButton>
-            
-            {isAdmin && (
-              <ListItemButton 
-                component={Link} 
-                to="/equipment/add"
-                selected={window.location.pathname === '/equipment/add'}
-              >
-                <ListItemIcon>
-                  <Build />
-                </ListItemIcon>
-                <ListItemText primary="Thêm thiết bị mới" />
-              </ListItemButton>
-            )}
-            
-            <ListItemButton 
-              component={Link} 
-              to="/maintenance"
-              selected={window.location.pathname === '/maintenance'}
-            >
-              <ListItemIcon>
-                <Schedule />
-              </ListItemIcon>
-              <ListItemText primary="Lịch bảo trì" />
-            </ListItemButton>
-          </>
-        )}
+          </Link>
 
-        {/* Quản lý lịch làm việc - dành cho huấn luyện viên */}
-        {isTrainer && (
-          <>
-            <Box sx={{ p: 2, pt: 3 }}>
-              <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
-                QUẢN LÝ LỊCH LÀM VIỆC
-              </Typography>
-            </Box>
-            
+          <Box sx={{ p: 2, pt: 3 }}>
+            <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+              QUẢN LÝ KHÁCH HÀNG
+            </Typography>
+          </Box>
+          
+          <Link to="/customers" style={linkStyles}>
             <ListItemButton 
-              component={Link} 
-              to="/my-schedule"
-              selected={window.location.pathname === '/my-schedule'}
+              sx={{
+                ...isActive('/customers') && !location.pathname.includes('/customers/add') ? activeItemStyles : normalItemStyles,
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
+                transition: 'all 0.2s ease-in-out'
+              }}
             >
               <ListItemIcon>
-                <Schedule />
+                <ListIcon color={isActive('/customers') && !location.pathname.includes('/customers/add') ? "primary" : "inherit"} />
               </ListItemIcon>
-              <ListItemText primary="Xem lịch làm việc" />
+              <ListItemText primary="Danh sách khách hàng" />
             </ListItemButton>
-            
+          </Link>
+          <Link to="/customers/add" style={linkStyles}>
             <ListItemButton 
-              component={Link} 
-              to="/schedule"
-              selected={window.location.pathname === '/schedule'}
+              sx={{
+                ...isActive('/customers/add') ? activeItemStyles : normalItemStyles,
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
+                transition: 'all 0.2s ease-in-out'
+              }}
             >
               <ListItemIcon>
-                <ScheduleIcon />
+                <PersonAdd color={isActive('/customers/add') ? "primary" : "inherit"} />
               </ListItemIcon>
-              <ListItemText primary="Quản lý lịch làm việc" />
+              <ListItemText primary="Thêm khách hàng mới" />
             </ListItemButton>
+          </Link>
 
+          <Box sx={{ p: 2, pt: 3 }}>
+            <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+              QUẢN LÝ HUẤN LUYỆN VIÊN
+            </Typography>
+          </Box>
+          
+          <Link to="/trainers" style={linkStyles}>
             <ListItemButton 
-              component={Link} 
-              to="/trainer-registrations"
-              selected={window.location.pathname === '/trainer-registrations'}
+              sx={{
+                ...isActive('/trainers') && !location.pathname.includes('/trainers/add') ? activeItemStyles : normalItemStyles,
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
+                transition: 'all 0.2s ease-in-out'
+              }}
             >
               <ListItemIcon>
-                <Badge
-                  badgeContent={pendingRegistrations}
-                  color="error"
-                  invisible={pendingRegistrations === 0}
+                <ListIcon color={isActive('/trainers') && !location.pathname.includes('/trainers/add') ? "primary" : "inherit"} />
+              </ListItemIcon>
+              <ListItemText primary="Danh sách huấn luyện viên" />
+            </ListItemButton>
+          </Link>
+          <Link to="/trainers/add" style={linkStyles}>
+            <ListItemButton 
+              sx={{
+                ...isActive('/trainers/add') ? activeItemStyles : normalItemStyles,
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
+                transition: 'all 0.2s ease-in-out'
+              }}
+            >
+              <ListItemIcon>
+                <PersonAdd color={isActive('/trainers/add') ? "primary" : "inherit"} />
+              </ListItemIcon>
+              <ListItemText primary="Thêm huấn luyện viên mới" />
+            </ListItemButton>
+          </Link>
+
+          {(isAdmin || user?.role === 'receptionist') && (
+            <>
+              <Box sx={{ p: 2, pt: 3 }}>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                  QUẢN LÝ CƠ SỞ VẬT CHẤT
+                </Typography>
+              </Box>
+              
+              <Link to="/equipment" style={linkStyles}>
+                <ListItemButton 
+                  sx={{
+                    ...isActive('/equipment') && !location.pathname.includes('/equipment/add') ? activeItemStyles : normalItemStyles,
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
                 >
-                  <Assignment />
-                </Badge>
-              </ListItemIcon>
-              <ListItemText primary="Đăng ký của khách hàng" />
-            </ListItemButton>
-            
-            <Box sx={{ p: 2, pt: 3 }}>
-              <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
-                QUẢN LÝ DỊCH VỤ
-              </Typography>
-            </Box>
-            
-            <ListItemButton 
-              component={Link} 
-              to="/services/manage"
-              selected={window.location.pathname === '/services/manage'}
-            >
-              <ListItemIcon>
-                <FitnessCenter />
-              </ListItemIcon>
-              <ListItemText primary="Quản lý dịch vụ" />
-            </ListItemButton>
-          </>
-        )}
+                  <ListItemIcon>
+                    <Handyman color={isActive('/equipment') && !location.pathname.includes('/equipment/add') ? "primary" : "inherit"} />
+                  </ListItemIcon>
+                  <ListItemText primary="Danh sách thiết bị" />
+                </ListItemButton>
+              </Link>
+              
+              {isAdmin && (
+                <Link to="/equipment/add" style={linkStyles}>
+                  <ListItemButton 
+                    sx={{
+                      ...isActive('/equipment/add') ? activeItemStyles : normalItemStyles,
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                      transition: 'all 0.2s ease-in-out'
+                    }}
+                  >
+                    <ListItemIcon>
+                      <Build color={isActive('/equipment/add') ? "primary" : "inherit"} />
+                    </ListItemIcon>
+                    <ListItemText primary="Thêm thiết bị mới" />
+                  </ListItemButton>
+                </Link>
+              )}
+              
+              <Link to="/maintenance" style={linkStyles}>
+                <ListItemButton 
+                  sx={{
+                    ...isActive('/maintenance') ? activeItemStyles : normalItemStyles,
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <ListItemIcon>
+                    <Schedule color={isActive('/maintenance') ? "primary" : "inherit"} />
+                  </ListItemIcon>
+                  <ListItemText primary="Lịch bảo trì" />
+                </ListItemButton>
+              </Link>
+            </>
+          )}
 
-        {/* Khách hàng */}
-        {isCustomer && (
-          <>
-            <Box sx={{ p: 2, pt: 3 }}>
-              <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
-                DỊCH VỤ
-              </Typography>
-            </Box>
-            
-            <ListItemButton 
-              component={Link} 
-              to="/trainers"
-              selected={window.location.pathname === '/trainers'}
-            >
-              <ListItemIcon>
-                <FitnessCenter />
-              </ListItemIcon>
-              <ListItemText primary="Đăng ký huấn luyện viên" />
-            </ListItemButton>
-            
-            <ListItemButton 
-              component={Link} 
-              to="/my-registrations"
-              selected={window.location.pathname === '/my-registrations'}
-            >
-              <ListItemIcon>
-                <ListAlt />
-              </ListItemIcon>
-              <ListItemText primary="Đăng ký của tôi" />
-            </ListItemButton>
-          </>
-        )}
+          {/* Quản lý lịch làm việc - dành cho huấn luyện viên */}
+          {isTrainer && (
+            <>
+              <Box sx={{ p: 2, pt: 3 }}>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                  QUẢN LÝ LỊCH LÀM VIỆC
+                </Typography>
+              </Box>
+              
+              <Link to="/my-schedule" style={linkStyles}>
+                <ListItemButton 
+                  sx={{
+                    ...isActive('/my-schedule') ? activeItemStyles : normalItemStyles,
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <ListItemIcon>
+                    <Schedule color={isActive('/my-schedule') ? "primary" : "inherit"} />
+                  </ListItemIcon>
+                  <ListItemText primary="Xem lịch làm việc" />
+                </ListItemButton>
+              </Link>
+              
+              <Link to="/schedule" style={linkStyles}>
+                <ListItemButton 
+                  sx={{
+                    ...isActive('/schedule') && location.pathname === '/schedule' ? activeItemStyles : normalItemStyles,
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <ListItemIcon>
+                    <ScheduleIcon color={isActive('/schedule') && location.pathname === '/schedule' ? "primary" : "inherit"} />
+                  </ListItemIcon>
+                  <ListItemText primary="Quản lý lịch làm việc" />
+                </ListItemButton>
+              </Link>
 
-        {isAdmin && (
-          <>
-            <Box sx={{ p: 2, pt: 3 }}>
-              <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
-                QUẢN LÝ NỘI BỘ
-              </Typography>
-            </Box>
-            
-            <ListItemButton 
-              component={Link} 
-              to="/staff"
-              selected={window.location.pathname === '/staff'}
-            >
-              <ListItemIcon>
-                <ListIcon />
-              </ListItemIcon>
-              <ListItemText primary="Danh sách nhân viên" />
-            </ListItemButton>
-            <ListItemButton 
-              component={Link} 
-              to="/staff/add"
-              selected={window.location.pathname === '/staff/add'}
-            >
-              <ListItemIcon>
-                <PersonAdd />
-              </ListItemIcon>
-              <ListItemText primary="Thêm nhân viên mới" />
-            </ListItemButton>
-          </>
-        )}
-      </List>
-    </Box>
-  );
+              <Link to="/trainer-registrations" style={linkStyles}>
+                <ListItemButton 
+                  sx={{
+                    ...isActive('/trainer-registrations') ? activeItemStyles : normalItemStyles,
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <ListItemIcon>
+                    <Badge
+                      badgeContent={pendingRegistrations}
+                      color="error"
+                      invisible={pendingRegistrations === 0}
+                    >
+                      <Assignment color={isActive('/trainer-registrations') ? "primary" : "inherit"} />
+                    </Badge>
+                  </ListItemIcon>
+                  <ListItemText primary="Đăng ký của khách hàng" />
+                </ListItemButton>
+              </Link>
+              
+              <Box sx={{ p: 2, pt: 3 }}>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                  QUẢN LÝ DỊCH VỤ
+                </Typography>
+              </Box>
+              
+              <Link to="/services/manage" style={linkStyles}>
+                <ListItemButton 
+                  sx={{
+                    ...isActive('/services/manage') ? activeItemStyles : normalItemStyles,
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <ListItemIcon>
+                    <FitnessCenter color={isActive('/services/manage') ? "primary" : "inherit"} />
+                  </ListItemIcon>
+                  <ListItemText primary="Quản lý dịch vụ" />
+                </ListItemButton>
+              </Link>
+            </>
+          )}
+
+          {/* Khách hàng */}
+          {isCustomer && (
+            <>
+              <Box sx={{ p: 2, pt: 3 }}>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                  DỊCH VỤ
+                </Typography>
+              </Box>
+              
+              <Link to="/trainers" style={linkStyles}>
+                <ListItemButton 
+                  sx={{
+                    ...isActive('/trainers') && !location.pathname.includes('/trainers/add') ? activeItemStyles : normalItemStyles,
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <ListItemIcon>
+                    <FitnessCenter color={isActive('/trainers') && !location.pathname.includes('/trainers/add') ? "primary" : "inherit"} />
+                  </ListItemIcon>
+                  <ListItemText primary="Đăng ký huấn luyện viên" />
+                </ListItemButton>
+              </Link>
+              
+              <Link to="/my-registrations" style={linkStyles}>
+                <ListItemButton 
+                  sx={{
+                    ...isActive('/my-registrations') ? activeItemStyles : normalItemStyles,
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <ListItemIcon>
+                    <ListAlt color={isActive('/my-registrations') ? "primary" : "inherit"} />
+                  </ListItemIcon>
+                  <ListItemText primary="Đăng ký của tôi" />
+                </ListItemButton>
+              </Link>
+            </>
+          )}
+
+          {isAdmin && (
+            <>
+              <Box sx={{ p: 2, pt: 3 }}>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+                  QUẢN LÝ NỘI BỘ
+                </Typography>
+              </Box>
+              
+              <Link to="/staff" style={linkStyles}>
+                <ListItemButton 
+                  sx={{
+                    ...isActive('/staff') && !location.pathname.includes('/staff/add') ? activeItemStyles : normalItemStyles,
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <ListItemIcon>
+                    <ListIcon color={isActive('/staff') && !location.pathname.includes('/staff/add') ? "primary" : "inherit"} />
+                  </ListItemIcon>
+                  <ListItemText primary="Danh sách nhân viên" />
+                </ListItemButton>
+              </Link>
+              <Link to="/staff/add" style={linkStyles}>
+                <ListItemButton 
+                  sx={{
+                    ...isActive('/staff/add') ? activeItemStyles : normalItemStyles,
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <ListItemIcon>
+                    <PersonAdd color={isActive('/staff/add') ? "primary" : "inherit"} />
+                  </ListItemIcon>
+                  <ListItemText primary="Thêm nhân viên mới" />
+                </ListItemButton>
+              </Link>
+            </>
+          )}
+        </List>
+      </Box>
+    );
+  };
 
   const renderAdminDashboard = () => (
     <Grid container spacing={4}>

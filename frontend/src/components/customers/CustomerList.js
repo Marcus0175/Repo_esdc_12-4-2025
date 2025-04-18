@@ -34,8 +34,10 @@ import {
   Search,
   Add,
   Block,
-  CheckCircle
+  CheckCircle,
+  LockReset
 } from '@mui/icons-material';
+import ResetPasswordDialog from '../common/ResetPasswordDialog';
 
 const CustomerList = () => {
   const alertContext = useContext(AlertContext);
@@ -50,6 +52,10 @@ const CustomerList = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [actionType, setActionType] = useState('');
   const [processingAction, setProcessingAction] = useState(false);
+  const [resetPasswordDialog, setResetPasswordDialog] = useState({ 
+    open: false, 
+    customer: null 
+  });
 
   const canManageCustomers = user && (user.role === 'admin' || user.role === 'receptionist');
 
@@ -78,6 +84,25 @@ const CustomerList = () => {
     setOpenDialog(false);
     setSelectedCustomer(null);
     setActionType('');
+  };
+
+  const handleOpenResetPasswordDialog = (customer) => {
+    setResetPasswordDialog({
+      open: true,
+      customer
+    });
+  };
+
+  const handleCloseResetPasswordDialog = (result) => {
+    setResetPasswordDialog({
+      open: false,
+      customer: null
+    });
+    
+    // Show success message if password was reset
+    if (result && result.success) {
+      setAlert(result.message, 'success');
+    }
   };
 
   const handleConfirmAction = async () => {
@@ -261,6 +286,14 @@ const CustomerList = () => {
                             >
                               <Edit />
                             </IconButton>
+                            <Tooltip title="Đặt lại mật khẩu">
+                              <IconButton
+                                color="primary"
+                                onClick={() => handleOpenResetPasswordDialog(customer)}
+                              >
+                                <LockReset />
+                              </IconButton>
+                            </Tooltip>
                             {customer.user?.active ? (
                               <Tooltip title="Vô hiệu hóa">
                                 <IconButton
@@ -332,6 +365,14 @@ const CustomerList = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ResetPasswordDialog
+        open={resetPasswordDialog.open}
+        onClose={handleCloseResetPasswordDialog}
+        userId={resetPasswordDialog.customer?._id}
+        userType="customer"
+        userName={resetPasswordDialog.customer?.user?.fullName}
+      />
     </Container>
   );
 };

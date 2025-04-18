@@ -9,7 +9,7 @@ exports.getAllCustomers = async (req, res) => {
     const customers = await Customer.find()
       .populate({
         path: 'user',
-        select: 'username email fullName phoneNumber active'
+        select: 'username email fullName phoneNumber active profileImage'
       })
       .populate({
         path: 'assignedTrainer',
@@ -26,13 +26,63 @@ exports.getAllCustomers = async (req, res) => {
   }
 };
 
+// Activate trainer account
+exports.activateTrainer = async (req, res) => {
+  try {
+    const trainer = await Trainer.findById(req.params.id);
+    
+    if (!trainer) {
+      return res.status(404).json({ message: 'Không tìm thấy huấn luyện viên' });
+    }
+    
+    const user = await User.findById(trainer.user);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản người dùng' });
+    }
+    
+    user.active = true;
+    await user.save();
+    
+    res.json({ message: 'Kích hoạt tài khoản thành công' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Lỗi server');
+  }
+};
+
+// Deactivate trainer account (not delete)
+exports.deactivateTrainer = async (req, res) => {
+  try {
+    const trainer = await Trainer.findById(req.params.id);
+    
+    if (!trainer) {
+      return res.status(404).json({ message: 'Không tìm thấy huấn luyện viên' });
+    }
+    
+    const user = await User.findById(trainer.user);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản người dùng' });
+    }
+    
+    user.active = false;
+    await user.save();
+    
+    res.json({ message: 'Vô hiệu hóa tài khoản thành công' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Lỗi server');
+  }
+};
+
 // Lấy danh sách tất cả huấn luyện viên
 exports.getAllTrainers = async (req, res) => {
   try {
     const trainers = await Trainer.find()
       .populate({
         path: 'user',
-        select: 'username email fullName phoneNumber active'
+        select: 'username email fullName phoneNumber active profileImage'
       });
       
     res.json(trainers);
@@ -410,7 +460,7 @@ exports.getCustomer = async (req, res) => {
     const customer = await Customer.findById(req.params.id)
       .populate({
         path: 'user',
-        select: 'username email fullName phoneNumber active'
+        select: 'username email fullName phoneNumber active profileImage'
       })
       .populate({
         path: 'assignedTrainer',
@@ -431,13 +481,78 @@ exports.getCustomer = async (req, res) => {
   }
 };
 
+// Reset password for customer
+exports.resetCustomerPassword = async (req, res) => {
+  const { password } = req.body;
+  
+  if (!password || password.trim().length < 6) {
+    return res.status(400).json({ message: 'Mật khẩu phải có ít nhất 6 ký tự' });
+  }
+  
+  try {
+    const customer = await Customer.findById(req.params.id);
+    
+    if (!customer) {
+      return res.status(404).json({ message: 'Không tìm thấy khách hàng' });
+    }
+    
+    const user = await User.findById(customer.user);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản người dùng' });
+    }
+    
+    // Update password
+    user.password = password;
+    await user.save();
+    
+    res.json({ message: 'Cập nhật mật khẩu thành công' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Lỗi server');
+  }
+};
+
+// Reset password for trainer
+exports.resetTrainerPassword = async (req, res) => {
+  const { password } = req.body;
+  
+  if (!password || password.trim().length < 6) {
+    return res.status(400).json({ message: 'Mật khẩu phải có ít nhất 6 ký tự' });
+  }
+  
+  try {
+    const trainer = await Trainer.findById(req.params.id);
+    
+    if (!trainer) {
+      return res.status(404).json({ message: 'Không tìm thấy huấn luyện viên' });
+    }
+    
+    const user = await User.findById(trainer.user);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản người dùng' });
+    }
+    
+    // Update password
+    user.password = password;
+    await user.save();
+    
+    res.json({ message: 'Cập nhật mật khẩu thành công' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Lỗi server');
+  }
+};
+
+
 // Lấy thông tin chi tiết của một huấn luyện viên
 exports.getTrainer = async (req, res) => {
   try {
     const trainer = await Trainer.findById(req.params.id)
       .populate({
         path: 'user',
-        select: 'username email fullName phoneNumber active'
+        select: 'username email fullName phoneNumber active profileImage'
       });
       
     if (!trainer) {

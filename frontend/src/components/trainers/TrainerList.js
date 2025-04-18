@@ -31,7 +31,8 @@ import {
   Card,
   CardContent,
   CardActions,
-  CardMedia
+  CardMedia,
+  Tooltip
 } from '@mui/material';
 import {
   Edit,
@@ -41,8 +42,10 @@ import {
   CheckCircle,
   FitnessCenter,
   Schedule,
-  Event
+  Event,
+  LockReset
 } from '@mui/icons-material';
+import ResetPasswordDialog from '../common/ResetPasswordDialog';
 
 const TrainerList = () => {
   const alertContext = useContext(AlertContext);
@@ -59,6 +62,10 @@ const TrainerList = () => {
   const [actionType, setActionType] = useState('');
   const [processingAction, setProcessingAction] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
+  const [resetPasswordDialog, setResetPasswordDialog] = useState({ 
+    open: false, 
+    trainer: null 
+  });
 
   // Check if user can manage trainers (admin or receptionist)
   const canManageTrainers = user && (user.role === 'admin' || user.role === 'receptionist');
@@ -91,20 +98,41 @@ const TrainerList = () => {
     setActionType('');
   };
 
+  const handleOpenResetPasswordDialog = (trainer) => {
+    setResetPasswordDialog({
+      open: true,
+      trainer
+    });
+  };
+
+  const handleCloseResetPasswordDialog = (result) => {
+    setResetPasswordDialog({
+      open: false,
+      trainer: null
+    });
+    
+    // Show success message if password was reset
+    if (result && result.success) {
+      setAlert(result.message, 'success');
+    }
+  };
+
   const handleConfirmAction = async () => {
     try {
       setProcessingAction(true);
       
       if (actionType === 'activate') {
+        // Use the new endpoint
         await api.put(`/users/trainers/${selectedTrainer._id}/activate`);
         setAlert('Kích hoạt tài khoản thành công', 'success');
       } else if (actionType === 'deactivate') {
-        await api.delete(`/users/trainers/${selectedTrainer._id}`);
+        // Use the new endpoint instead of delete
+        await api.put(`/users/trainers/${selectedTrainer._id}/deactivate`);
         setAlert('Vô hiệu hóa tài khoản thành công', 'success');
       }
       
       handleCloseDialog();
-      getTrainers();
+      getTrainers(); // Refresh the list
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Có lỗi xảy ra';
       setAlert(errorMsg, 'error');
@@ -220,6 +248,15 @@ const TrainerList = () => {
                       >
                         <Edit />
                       </IconButton>
+                      <Tooltip title="Đặt lại mật khẩu">
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleOpenResetPasswordDialog(trainer)}
+                          size="small"
+                        >
+                          <LockReset />
+                        </IconButton>
+                      </Tooltip>
                       {trainer.user?.active ? (
                         <IconButton
                           color="error"
@@ -404,6 +441,15 @@ const TrainerList = () => {
                 >
                   Chỉnh sửa
                 </Button>
+                <Button
+                  variant="text"
+                  size="small"
+                  startIcon={<LockReset />}
+                  onClick={() => handleOpenResetPasswordDialog(trainer)}
+                  sx={{ flexGrow: 1 }}
+                >
+                  Đặt lại mật khẩu
+                </Button>
                 {trainer.user?.active ? (
                   <Button
                     variant="text"
@@ -538,6 +584,14 @@ const TrainerList = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ResetPasswordDialog
+        open={resetPasswordDialog.open}
+        onClose={handleCloseResetPasswordDialog}
+        userId={resetPasswordDialog.trainer?._id}
+        userType="trainer"
+        userName={resetPasswordDialog.trainer?.user?.fullName}
+      />
     </Container>
   );
 };

@@ -70,10 +70,12 @@ const ServiceManagement = () => {
     try {
       let response;
       if (user && user.role === 'trainer') {
+        // Khi người dùng là huấn luyện viên, chỉ lấy dịch vụ của họ
         response = await api.get('/services', {
           params: { trainerId: user.id }
         });
       } else {
+        // Khi là admin, lấy tất cả dịch vụ
         response = await api.get('/services');
       }
       setServices(response.data);

@@ -74,11 +74,50 @@ router.put(
 // @route   PUT api/users/trainers/:id
 // @desc    Cập nhật thông tin huấn luyện viên
 // @access  Private (admin, receptionist)
+
+router.put(
+  '/trainers/:id/activate',
+  [auth, roleCheck('admin', 'receptionist')],
+  userController.activateTrainer
+);
+
+router.put(
+  '/trainers/:id/deactivate',
+  [auth, roleCheck('admin', 'receptionist')],
+  userController.deactivateTrainer
+);
 router.put(
   '/trainers/:id',
   [auth, roleCheck('admin', 'receptionist')],
   userController.updateTrainer
 );
+
+// Reset password for customer
+router.put(
+  '/customers/:id/reset-password',
+  [
+    auth, 
+    roleCheck('admin', 'receptionist'),
+    [
+      check('password', 'Mật khẩu phải có ít nhất 6 ký tự').isLength({ min: 6 })
+    ]
+  ],
+  userController.resetCustomerPassword
+);
+
+// Reset password for trainer
+router.put(
+  '/trainers/:id/reset-password',
+  [
+    auth, 
+    roleCheck('admin', 'receptionist'),
+    [
+      check('password', 'Mật khẩu phải có ít nhất 6 ký tự').isLength({ min: 6 })
+    ]
+  ],
+  userController.resetTrainerPassword
+);
+
 
 // @route   DELETE api/users/customers/:id
 // @desc    Vô hiệu hóa tài khoản khách hàng

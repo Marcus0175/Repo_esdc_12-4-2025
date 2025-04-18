@@ -19,7 +19,7 @@ const ServiceSchema = new mongoose.Schema({
   duration: {
     type: Number, // Thời lượng tính bằng phút
     required: true,
-    min: 15
+    min: 1
   },
   category: {
     type: String,
