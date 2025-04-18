@@ -94,7 +94,7 @@ exports.addCustomerService = async (req, res) => {
       customer: customer._id,
       trainer: trainer._id,
       service: service._id,
-      workScheduleId,
+      workSchedule: workScheduleId,
       startDate,
       numberOfSessions,
       totalPrice,
@@ -216,7 +216,8 @@ exports.deleteCustomerService = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy đăng ký dịch vụ' });
     }
     
-    await registration.remove();
+    // Thay đổi từ registration.remove() sang sử dụng phương thức hiện đại hơn
+    await ServiceRegistration.deleteOne({ _id: registration._id });
     
     res.json({ message: 'Đã xóa đăng ký dịch vụ' });
   } catch (err) {

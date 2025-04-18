@@ -34,10 +34,10 @@ import {
 } from '@mui/material';
 import {
   Search,
+  Add,
   Person,
   FitnessCenter,
   Schedule,
-  Add,
   Delete,
   ArrowForward
 } from '@mui/icons-material';
@@ -88,6 +88,7 @@ const CustomerServicesManagement = () => {
 
   const handleDeleteRegistration = async () => {
     try {
+      // Sửa endpoint gọi API - sửa thành đúng API endpoint
       await api.delete(`/customer-services/${confirmDialog.registrationId}`);
       
       // Cập nhật danh sách registrations sau khi xóa

@@ -21,9 +21,14 @@ import {
   CardContent,
   Divider,
   Chip,
-  Avatar
+  Avatar,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Checkbox
 } from '@mui/material';
-import { ArrowBack, Save, Person, FitnessCenter } from '@mui/icons-material';
+import { ArrowBack, Save, Person, FitnessCenter, AccessTime, Check } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -47,10 +52,13 @@ const AddCustomerService = () => {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // State cho việc chọn lịch làm việc
+  const [selectedSchedules, setSelectedSchedules] = useState([]);
+  const MAX_SCHEDULES = 4; // Số lượng lịch tối đa có thể chọn
+
   const [formData, setFormData] = useState({
     trainerId: '',
     serviceId: '',
-    workScheduleId: '',
     startDate: addDays(new Date(), 1),
     numberOfSessions: 1,
     notes: ''
@@ -91,6 +99,7 @@ const AddCustomerService = () => {
     const loadTrainerSchedules = async () => {
       if (!formData.trainerId) {
         setWorkSchedules([]);
+        setSelectedSchedules([]); // Reset selected schedules when trainer changes
         return;
       }
       
@@ -128,8 +137,8 @@ const AddCustomerService = () => {
         ...prev,
         [name]: value,
         serviceId: '',
-        workScheduleId: ''
       }));
+      setSelectedSchedules([]); // Reset selected schedules when trainer changes
     }
   };
 
@@ -149,7 +158,25 @@ const AddCustomerService = () => {
     }
   };
 
-  // Validate form data
+  // Handle schedule toggle
+  const handleScheduleToggle = (scheduleId) => {
+    setSelectedSchedules(prev => {
+      if (prev.includes(scheduleId)) {
+        // Remove if already selected
+        return prev.filter(id => id !== scheduleId);
+      } else {
+        // Add if not selected and under the limit
+        if (prev.length < MAX_SCHEDULES) {
+          return [...prev, scheduleId];
+        } else {
+          setAlert(`Bạn chỉ có thể chọn tối đa ${MAX_SCHEDULES} lịch làm việc`, 'warning');
+          return prev;
+        }
+      }
+    });
+  };
+
+  // Validate form
   const validateForm = () => {
     const newErrors = {};
     
@@ -161,16 +188,12 @@ const AddCustomerService = () => {
       newErrors.serviceId = 'Vui lòng chọn dịch vụ';
     }
     
-    if (!formData.workScheduleId) {
-      newErrors.workScheduleId = 'Vui lòng chọn lịch làm việc';
+    if (selectedSchedules.length === 0) {
+      newErrors.schedules = 'Vui lòng chọn ít nhất một lịch làm việc';
     }
     
     if (!formData.startDate) {
       newErrors.startDate = 'Vui lòng chọn ngày bắt đầu';
-    }
-    
-    if (!formData.numberOfSessions || formData.numberOfSessions < 1) {
-      newErrors.numberOfSessions = 'Số buổi phải lớn hơn hoặc bằng 1';
     }
     
     setErrors(newErrors);
@@ -178,26 +201,42 @@ const AddCustomerService = () => {
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Trong AddCustomerService.js, tại hàm handleSubmit
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validateForm()) {
+    return;
+  }
+  
+  setSubmitting(true);
+  
+  try {
+    // Đảm bảo dữ liệu được gửi đúng định dạng
+    const serviceData = {
+      ...formData,
+      // Đảm bảo startDate là chuỗi ISO nếu là đối tượng Date
+      startDate: formData.startDate instanceof Date ? 
+                 formData.startDate.toISOString() : 
+                 formData.startDate,
+      // Đảm bảo numberOfSessions là số nguyên
+      numberOfSessions: parseInt(formData.numberOfSessions),
+    };
     
-    if (!validateForm()) {
-      return;
-    }
+    console.log('Gửi dữ liệu:', serviceData); // Log để debug
     
-    setSubmitting(true);
-    
-    try {
-      await addCustomerService(customerId, formData);
-      setAlert('Thêm dịch vụ cho khách hàng thành công', 'success');
-      navigate(`/customers/${customerId}/services`);
-    } catch (err) {
-      setAlert(err.response?.data?.message || 'Lỗi khi thêm dịch vụ', 'error');
-      setSubmitting(false);
-    }
-  };
+    await addCustomerService(customerId, serviceData);
+    setAlert('Thêm dịch vụ cho khách hàng thành công', 'success');
+    navigate(`/customers/${customerId}/services`);
+  } catch (err) {
+    // Log lỗi chi tiết để debug
+    console.error('Chi tiết lỗi:', err.response?.data || err.message);
+    setAlert(err.response?.data?.message || 'Lỗi khi thêm dịch vụ', 'error');
+    setSubmitting(false);
+  }
+};
 
-  // Format date for display
+  // Format date
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('vi-VN', {
@@ -238,12 +277,49 @@ const AddCustomerService = () => {
 
   // Calculate total price
   const calculateTotalPrice = () => {
-    if (!formData.serviceId || !formData.numberOfSessions) return 0;
+    if (!formData.serviceId) return 0;
     
     const service = services.find(s => s._id === formData.serviceId);
     if (!service) return 0;
     
-    return service.price * formData.numberOfSessions;
+    return service.price ;
+  };
+
+  // Group schedules by day
+  const groupSchedulesByDay = () => {
+    const grouped = {};
+    
+    workSchedules.forEach(schedule => {
+      if (!grouped[schedule.dayOfWeek]) {
+        grouped[schedule.dayOfWeek] = [];
+      }
+      
+      grouped[schedule.dayOfWeek].push(schedule);
+    });
+    
+    // Sort days of week properly
+    const dayOrder = {
+      'Monday': 1,
+      'Tuesday': 2,
+      'Wednesday': 3,
+      'Thursday': 4,
+      'Friday': 5,
+      'Saturday': 6,
+      'Sunday': 7
+    };
+    
+    // Sort schedules by start time within each day
+    Object.keys(grouped).forEach(day => {
+      grouped[day].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    });
+    
+    // Return sorted days with their schedules
+    return Object.keys(grouped)
+      .sort((a, b) => dayOrder[a] - dayOrder[b])
+      .map(day => ({
+        day,
+        schedules: grouped[day]
+      }));
   };
 
   if (loading) {
@@ -384,26 +460,6 @@ const AddCustomerService = () => {
             </Grid>
             
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth error={Boolean(errors.workScheduleId)} disabled={!formData.trainerId}>
-                <InputLabel id="schedule-label">Lịch làm việc</InputLabel>
-                <Select
-                  labelId="schedule-label"
-                  name="workScheduleId"
-                  value={formData.workScheduleId}
-                  label="Lịch làm việc"
-                  onChange={handleInputChange}
-                >
-                  {workSchedules.map((schedule) => (
-                    <MenuItem key={schedule._id} value={schedule._id}>
-                      {translateDay(schedule.dayOfWeek)}: {schedule.startTime} - {schedule.endTime}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText>{errors.workScheduleId}</FormHelperText>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
               <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={viLocale}>
                 <DatePicker
                   label="Ngày bắt đầu"
@@ -422,20 +478,6 @@ const AddCustomerService = () => {
               </LocalizationProvider>
             </Grid>
             
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Số buổi"
-                name="numberOfSessions"
-                type="number"
-                value={formData.numberOfSessions}
-                onChange={handleInputChange}
-                inputProps={{ min: 1 }}
-                error={Boolean(errors.numberOfSessions)}
-                helperText={errors.numberOfSessions}
-              />
-            </Grid>
-            
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -448,8 +490,88 @@ const AddCustomerService = () => {
               />
             </Grid>
             
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                <AccessTime sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Chọn lịch làm việc (tối đa {MAX_SCHEDULES} lịch)
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              
+              {errors.schedules && (
+                <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+                  {errors.schedules}
+                </Typography>
+              )}
+              
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
+                  Đã chọn: {selectedSchedules.length}/{MAX_SCHEDULES} lịch
+                </Typography>
+              </Box>
+              
+              {formData.trainerId ? (
+                workSchedules.length > 0 ? (
+                  <Grid container spacing={2}>
+                    {groupSchedulesByDay().map(({ day, schedules }) => (
+                      <Grid item xs={12} md={6} key={day}>
+                        <Card variant="outlined">
+                          <CardContent>
+                            <Typography variant="h6" gutterBottom>
+                              {translateDay(day)}
+                            </Typography>
+                            <Divider sx={{ mb: 2 }} />
+                            
+                            <List dense>
+                              {schedules.map((schedule) => (
+                                <ListItem 
+                                  key={schedule._id}
+                                  sx={{
+                                    backgroundColor: selectedSchedules.includes(schedule._id) 
+                                      ? 'rgba(25, 118, 210, 0.1)' 
+                                      : 'transparent',
+                                    borderRadius: 1,
+                                    mb: 1
+                                  }}
+                                >
+                                  <ListItemIcon>
+                                    <Checkbox
+                                      edge="start"
+                                      checked={selectedSchedules.includes(schedule._id)}
+                                      onChange={() => handleScheduleToggle(schedule._id)}
+                                      color="primary"
+                                    />
+                                  </ListItemIcon>
+                                  <ListItemText 
+                                    primary={`${schedule.startTime} - ${schedule.endTime}`}
+                                    secondary={schedule.note}
+                                  />
+                                  <AccessTime color="action" />
+                                </ListItem>
+                              ))}
+                            </List>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography variant="body1" color="textSecondary" gutterBottom>
+                      Huấn luyện viên chưa đăng ký lịch làm việc.
+                    </Typography>
+                  </Box>
+                )
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body1" color="textSecondary" gutterBottom>
+                    Vui lòng chọn huấn luyện viên để xem lịch làm việc.
+                  </Typography>
+                </Box>
+              )}
+            </Grid>
+            
             {/* Price Summary */}
-            {formData.serviceId && (
+            {formData.serviceId && selectedSchedules.length > 0 && (
               <Grid item xs={12}>
                 <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 1, mt: 2 }}>
                   <Typography variant="h6" gutterBottom>
@@ -466,7 +588,7 @@ const AddCustomerService = () => {
                     </Grid>
                     <Grid item xs={12} md={6}>
                       <Typography variant="body1">
-                        Số buổi: {formData.numberOfSessions}
+                        Số buổi: {selectedSchedules.length}
                       </Typography>
                       <Typography variant="h6" color="primary" sx={{ textAlign: 'right' }}>
                         Tổng: {formatCurrency(calculateTotalPrice())}

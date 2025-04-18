@@ -72,27 +72,42 @@ const CustomerServiceState = props => {
     }
   }, [setLoading]);
 
-  // Add service for customer
-  const addCustomerService = useCallback(async (customerId, serviceData) => {
-    setLoading();
+  // Trong file contexts/customerService/CustomerServiceState.js
+const addCustomerService = useCallback(async (customerId, serviceData) => {
+  setLoading();
+  
+  try {
+    // Đảm bảo số buổi (numberOfSessions) là số nguyên
+    const dataToSend = {
+      ...serviceData,
+      numberOfSessions: parseInt(serviceData.numberOfSessions)
+    };
     
-    try {
-      const res = await api.post(`/customer-services/${customerId}`, serviceData);
-      
-      dispatch({
-        type: ADD_CUSTOMER_SERVICE,
-        payload: res.data
-      });
-      
-      return res.data;
-    } catch (err) {
-      dispatch({
-        type: CUSTOMER_SERVICE_ERROR,
-        payload: err.response?.data?.message || 'Lỗi khi thêm dịch vụ cho khách hàng'
-      });
-      throw err;
+    // Chuyển đổi ngày thành chuỗi ISO nếu là đối tượng Date
+    if (dataToSend.startDate instanceof Date) {
+      dataToSend.startDate = dataToSend.startDate.toISOString();
     }
-  }, [setLoading]);
+    
+    console.log('Sending data:', dataToSend); // Log dữ liệu gửi đi để debug
+    
+    const res = await api.post(`/customer-services/${customerId}`, dataToSend);
+    
+    dispatch({
+      type: ADD_CUSTOMER_SERVICE,
+      payload: res.data
+    });
+    
+    return res.data;
+  } catch (err) {
+    console.error('Error details:', err.response?.data || err.message);
+    
+    dispatch({
+      type: CUSTOMER_SERVICE_ERROR,
+      payload: err.response?.data?.message || 'Lỗi khi thêm dịch vụ cho khách hàng'
+    });
+    throw err;
+  }
+}, [setLoading]);
 
   // Update customer service
   const updateCustomerService = useCallback(async (registrationId, updateData) => {
