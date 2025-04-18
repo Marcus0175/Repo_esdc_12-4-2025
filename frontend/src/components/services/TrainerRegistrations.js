@@ -726,6 +726,7 @@ const RenderRegistrationList = ({
                   <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Typography variant="subtitle1">
                       <strong>Tổng chi phí:</strong> {formatCurrency(registration.totalPrice)}
+                      {registration.numberOfSessions > 1 && ` (${registration.numberOfSessions} buổi)`}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Đăng ký lúc: {new Date(registration.createdAt).toLocaleString('vi-VN')}

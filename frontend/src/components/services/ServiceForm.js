@@ -148,8 +148,7 @@ const ServiceForm = () => {
       const serviceData = {
         ...formData,
         price: parseFloat(formData.price),
-        // Chuyển đổi từ tuần sang phút
-        duration: parseInt(formData.duration) * 7 * 24 * 60
+        duration: parseInt(formData.duration) 
       };
       
       if (isEditMode) {

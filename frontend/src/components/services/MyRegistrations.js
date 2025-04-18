@@ -285,6 +285,7 @@ const MyRegistrations = () => {
                   <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
                     <Typography variant="body1">
                       <strong>Tổng tiền:</strong> {formatCurrency(registration.totalPrice)}
+                      {registration.numberOfSessions > 1 && ` (${registration.numberOfSessions} buổi)`}
                     </Typography>
                     
                     {canCancelRegistration(registration) && (

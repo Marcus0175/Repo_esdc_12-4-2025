@@ -129,7 +129,7 @@ const TrainerServiceRegistration = () => {
       const service = filteredServices.find(s => s._id === selectedService) || 
                       services.find(s => s._id === selectedService);
       if (service) {
-        setTotalPrice(service.price * numberOfSessions);
+        setTotalPrice(service.price);
       }
     } else {
       setTotalPrice(0);
@@ -187,9 +187,7 @@ const TrainerServiceRegistration = () => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
-  const formatDuration = (minutes) => {
-    // Chuyển từ phút sang tuần
-    const weeks = Math.round(minutes / (7 * 24 * 60));
+  const formatDuration = (weeks) => {
     return `${weeks} tuần`;
   };
 

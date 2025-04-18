@@ -246,7 +246,7 @@ exports.createRegistration = async (req, res) => {
     }
     
     // Tính tổng giá
-    const totalPrice = service.price * numberOfSessions;
+    const totalPrice = service.price;
     
     // Tạo đăng ký mới
     const newRegistration = new ServiceRegistration({

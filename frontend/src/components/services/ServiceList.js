@@ -82,9 +82,8 @@ const ServiceList = () => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
-  const formatDuration = (minutes) => {
+  const formatDuration = (weeks) => {
     // Chuyển từ phút sang tuần
-    const weeks = Math.round(minutes / (7 * 24 * 60));
     return `${weeks} tuần`;
   };
 

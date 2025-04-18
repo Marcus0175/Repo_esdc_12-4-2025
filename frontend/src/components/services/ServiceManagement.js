@@ -156,8 +156,8 @@ const ServiceManagement = () => {
       errors.price = 'Giá dịch vụ phải là số dương';
     }
     
-    if (!formData.duration || isNaN(formData.duration) || Number(formData.duration) < 15) {
-      errors.duration = 'Thời lượng dịch vụ phải ít nhất 15 phút';
+    if (!formData.duration || isNaN(formData.duration) || Number(formData.duration) < 1) {
+      errors.duration = 'Thời lượng dịch vụ phải ít nhất 1 tuần';
     }
     
     setFormErrors(errors);
@@ -225,14 +225,8 @@ const ServiceManagement = () => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
-  const formatDuration = (minutes) => {
-    if (minutes < 60) {
-      return `${minutes} phút`;
-    } else {
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
-      return mins > 0 ? `${hours} giờ ${mins} phút` : `${hours} giờ`;
-    }
+  const formatDuration = (weeks) => {
+    return `${weeks} tuần`;
   };
 
   return (
@@ -391,13 +385,13 @@ const ServiceManagement = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Thời lượng (phút)"
+                label="Thời lượng (tuần)"
                 name="duration"
                 type="number"
                 value={formData.duration}
                 onChange={handleChange}
                 InputProps={{
-                  endAdornment: <InputAdornment position="end">phút</InputAdornment>,
+                  endAdornment: <InputAdornment position="end">tuần</InputAdornment>,
                 }}
                 error={Boolean(formErrors.duration)}
                 helperText={formErrors.duration}

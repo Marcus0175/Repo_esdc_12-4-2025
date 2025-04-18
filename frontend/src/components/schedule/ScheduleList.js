@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import ScheduleContext from '../../contexts/schedule/scheduleContext';
 import AlertContext from '../../contexts/alert/alertContext';
 import AuthContext from '../../contexts/auth/authContext';
+import { Sync as SyncIcon } from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -65,6 +66,7 @@ const ScheduleList = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [lastRefresh, setLastRefresh] = useState(Date.now());
+  const [syncing, setSyncing] = useState(false); // Thêm state mới để theo dõi trạng thái đồng bộ
 
   useEffect(() => {
     // Only fetch schedule data when the component mounts or id changes or on refresh
@@ -124,6 +126,30 @@ const ScheduleList = () => {
     setIsLoaded(false);
     setLastRefresh(Date.now());
     setSuccessMessage('Lịch làm việc đã được thêm thành công');
+  };
+
+  // Thêm hàm xử lý đồng bộ lịch
+  const handleSyncSchedule = async () => {
+    try {
+      setSyncing(true); // Bắt đầu đồng bộ
+      
+      // Đường dẫn API phụ thuộc vào trainer ID
+      const syncEndpoint = id ? `/schedule/${id}/sync` : '/schedule/sync';
+      
+      // Giả định rằng có một api object được import hoặc khai báo ở nơi khác
+      // Hoặc có thể sử dụng trực tiếp từ context nếu có sẵn phương thức sync
+      await scheduleContext.syncSchedule(isMySchedule ? trainerId : id);
+      
+      setSuccessMessage('Đồng bộ lịch làm việc thành công');
+      
+      // Refresh dữ liệu
+      handleRefresh();
+    } catch (err) {
+      console.error('Sync schedule error:', err);
+      setAlert(err.response?.data?.message || 'Lỗi khi đồng bộ lịch làm việc', 'error');
+    } finally {
+      setSyncing(false); // Kết thúc đồng bộ
+    }
   };
 
   const handleDeleteSchedule = async () => {
@@ -232,6 +258,17 @@ const ScheduleList = () => {
                 <Refresh />
               </IconButton>
             </Tooltip>
+            {/* Thêm nút đồng bộ lịch */}
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<SyncIcon />}
+              onClick={handleSyncSchedule}
+              disabled={syncing}
+              sx={{ mr: 1 }}
+            >
+              {syncing ? 'Đang đồng bộ...' : 'Đồng bộ lịch'}
+            </Button>
             {(isMySchedule || (user && user.role === 'admin')) && (
               <Button
                 variant="contained"

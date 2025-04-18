@@ -63,4 +63,18 @@ router.delete(
   scheduleController.deleteScheduleItem
 );
 
+// @route   POST /api/schedule/sync
+router.post(
+  '/sync',
+  [auth, roleCheck('trainer', 'admin')],
+  scheduleController.syncScheduleToWorkSchedule
+);
+
+// Cho admin đồng bộ cho trainer cụ thể
+router.post(
+  '/:trainerId/sync',
+  [auth, roleCheck('admin')],
+  scheduleController.syncScheduleToWorkSchedule
+);
+
 module.exports = router;

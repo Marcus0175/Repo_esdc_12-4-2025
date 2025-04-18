@@ -1,6 +1,6 @@
 const { validationResult } = require('express-validator');
 const Trainer = require('../models/Trainer');
-
+const WorkSchedule = require('../models/WorkSchedule');
 // @desc    Lấy lịch làm việc của huấn luyện viên
 // @route   GET /api/schedule/:trainerId
 // @access  Private (trainer, admin, receptionist)
@@ -127,8 +127,25 @@ exports.deleteScheduleItem = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy lịch làm việc' });
     }
     
+    // Lưu thông tin lịch làm việc trước khi xóa để tìm trong WorkSchedule
+    const scheduleToDelete = trainer.availability[scheduleIndex];
+    
+    // Xóa từ trainer.availability
     trainer.availability.splice(scheduleIndex, 1);
     await trainer.save();
+    
+    // THÊM MỚI: Xóa khỏi bảng WorkSchedule
+    const workSchedule = await WorkSchedule.findOne({
+      trainer: trainer._id,
+      dayOfWeek: scheduleToDelete.day,
+      startTime: scheduleToDelete.startTime,
+      endTime: scheduleToDelete.endTime
+    });
+    
+    if (workSchedule) {
+      await workSchedule.remove();
+      console.log('Đã xóa lịch làm việc từ WorkSchedule');
+    }
     
     res.json({ message: 'Đã xóa lịch làm việc', schedule: trainer.availability });
   } catch (err) {
@@ -142,9 +159,6 @@ exports.deleteScheduleItem = async (req, res) => {
   }
 };
 
-// @desc    Thêm lịch làm việc cho huấn luyện viên
-// @route   POST /api/schedule/:trainerId
-// @access  Private (trainer, admin)
 exports.addScheduleItem = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -203,7 +217,7 @@ exports.addScheduleItem = async (req, res) => {
       });
     }
     
-    // Thêm lịch làm việc mới
+    // Thêm lịch làm việc mới vào trainer.availability
     const newScheduleItem = {
       day,
       startTime,
@@ -213,9 +227,22 @@ exports.addScheduleItem = async (req, res) => {
     trainer.availability.push(newScheduleItem);
     await trainer.save();
     
+    // THÊM MỚI: Đồng bộ với bảng WorkSchedule
+    const newWorkSchedule = new WorkSchedule({
+      trainer: trainer._id,
+      dayOfWeek: day,
+      startTime: startTime,
+      endTime: endTime,
+      isAvailable: true,
+      note: ''
+    });
+    
+    await newWorkSchedule.save();
+    
     res.status(201).json({ 
       message: 'Đã thêm lịch làm việc mới',
-      scheduleItem: trainer.availability[trainer.availability.length - 1] 
+      scheduleItem: trainer.availability[trainer.availability.length - 1],
+      workSchedule: newWorkSchedule  // Trả về thông tin WorkSchedule đã thêm
     });
   } catch (err) {
     console.error('Lỗi trong addScheduleItem:', err);
@@ -224,6 +251,78 @@ exports.addScheduleItem = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy huấn luyện viên' });
     }
     
+    res.status(500).send('Lỗi server');
+  }
+};
+
+// @desc    Đồng bộ lịch từ trainer.availability sang work_schedules
+// @route   POST /api/schedule/sync
+// @access  Private (trainer, admin)
+exports.syncScheduleToWorkSchedule = async (req, res) => {
+  try {
+    // Xác định trainer ID
+    let trainerId;
+    
+    if (req.user.role === 'trainer') {
+      // Nếu là huấn luyện viên, lấy trainer ID từ user hiện tại
+      const trainer = await Trainer.findOne({ user: req.user.id });
+      
+      if (!trainer) {
+        return res.status(404).json({ message: 'Không tìm thấy thông tin huấn luyện viên' });
+      }
+      
+      trainerId = trainer._id;
+    } else if (req.params.trainerId) {
+      // Nếu là admin và có trainerId trong params
+      trainerId = req.params.trainerId;
+    } else {
+      return res.status(400).json({ message: 'Thiếu thông tin huấn luyện viên' });
+    }
+    
+    // Lấy thông tin huấn luyện viên
+    const trainer = await Trainer.findById(trainerId);
+    
+    if (!trainer) {
+      return res.status(404).json({ message: 'Không tìm thấy huấn luyện viên' });
+    }
+    
+    // Lấy tất cả lịch làm việc hiện tại
+    const existingSchedules = await WorkSchedule.find({ trainer: trainerId });
+    
+    // Danh sách các lịch đã được thêm
+    const addedSchedules = [];
+    
+    // Duyệt qua từng availability và thêm vào work_schedules
+    for (const item of trainer.availability) {
+      // Kiểm tra xem lịch này đã tồn tại trong WorkSchedule chưa
+      const existingSchedule = existingSchedules.find(schedule => 
+        schedule.dayOfWeek === item.day && 
+        schedule.startTime === item.startTime && 
+        schedule.endTime === item.endTime
+      );
+      
+      // Nếu chưa tồn tại, thêm mới
+      if (!existingSchedule) {
+        const newSchedule = new WorkSchedule({
+          trainer: trainerId,
+          dayOfWeek: item.day,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          isAvailable: true,
+          note: ''
+        });
+        
+        await newSchedule.save();
+        addedSchedules.push(newSchedule);
+      }
+    }
+    
+    res.json({ 
+      message: `Đã đồng bộ ${addedSchedules.length} lịch làm việc thành công`, 
+      addedSchedules 
+    });
+  } catch (err) {
+    console.error('Lỗi trong syncScheduleToWorkSchedule:', err);
     res.status(500).send('Lỗi server');
   }
 };
