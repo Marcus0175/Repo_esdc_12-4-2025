@@ -281,7 +281,7 @@ const CustomerList = () => {
                         {canManageCustomers && (
                           <>
                             {/* Các thao tác khác */}
-                            <Button
+                            {/* <Button
                               variant="outlined"
                               size="small"
                               color="primary"
@@ -291,7 +291,7 @@ const CustomerList = () => {
                               startIcon={<FitnessCenter />}
                             >
                               Quản lý dịch vụ
-                            </Button>
+                            </Button> */}
                             {/* Các IconButton hiện tại */}
                             <IconButton
                               color="primary"

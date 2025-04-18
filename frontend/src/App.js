@@ -41,6 +41,7 @@ import MyFeedback from './components/feedback/MyFeedback';
 import CustomerServiceList from './components/customers/CustomerServiceList';
 import AddCustomerService from './components/customers/AddCustomerService';
 import CustomerServiceState from './contexts/customerService/CustomerServiceState';
+import CustomerServicesManagement from './components/customers/CustomerServicesManagement';
 const AppContent = () => {
   const authContext = useContext(AuthContext);
   const { loadUser } = authContext;
@@ -220,6 +221,16 @@ const AppContent = () => {
               />
             }
           />
+
+<Route
+  path="/customer-services-management"
+  element={
+    <PrivateRoute
+      component={CustomerServicesManagement}
+      roles={['admin', 'receptionist']}
+    />
+  }
+/>
           
             {/* Customer Service Management Routes */}
 <Route

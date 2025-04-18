@@ -478,7 +478,7 @@ const Dashboard = () => {
         >
           <People sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Quản lý khách hàng
+            Khách hàng
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
             Quản lý thông tin và tài khoản của khách hàng
@@ -499,6 +499,41 @@ const Dashboard = () => {
         </Paper>
       </Grid>
 
+      <Grid item xs={12} md={6}>
+  <Paper
+    sx={{
+      p: 3,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
+      color: 'white'
+    }}
+  >
+    <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
+    <Typography variant="h5" gutterBottom>
+      Dịch vụ khách hàng
+    </Typography>
+    <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+      Quản lý các dịch vụ và tiến độ của khách hàng
+    </Typography>
+    <Button
+      variant="contained"
+      component={Link}
+      to="/customer-services-management"
+      sx={{ 
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.3)'
+        }
+      }}
+    >
+      Xem dịch vụ
+    </Button>
+  </Paper>
+</Grid>
+
       <Grid item xs={12} md={4}>
         <Paper
           sx={{
@@ -513,7 +548,7 @@ const Dashboard = () => {
         >
           <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Quản lý huấn luyện viên
+            Huấn luyện viên
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
             Quản lý thông tin và tài khoản của huấn luyện viên
@@ -548,7 +583,7 @@ const Dashboard = () => {
         >
           <AdminPanelSettings sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Quản lý nội bộ
+            Nội bộ
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
             Quản lý tài khoản của lễ tân và quản trị viên
@@ -585,7 +620,7 @@ const Dashboard = () => {
         >
           <Build sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Quản lý cơ sở vật chất
+            Cơ sở vật chất
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
             Quản lý và theo dõi tình trạng cơ sở vật chất
@@ -659,7 +694,7 @@ const Dashboard = () => {
         >
           <People sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Quản lý khách hàng
+            Khách hàng
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
             Quản lý thông tin và tài khoản của khách hàng
@@ -694,7 +729,7 @@ const Dashboard = () => {
         >
           <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Quản lý huấn luyện viên
+            Huấn luyện viên
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
             Quản lý thông tin và tài khoản của huấn luyện viên
@@ -729,7 +764,7 @@ const Dashboard = () => {
         >
           <Build sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Quản lý cơ sở vật chất
+            Cơ sở vật chất
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
             Theo dõi tình trạng cơ sở vật chất
