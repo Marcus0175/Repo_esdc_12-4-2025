@@ -42,6 +42,10 @@ import CustomerServiceList from './components/customers/CustomerServiceList';
 import AddCustomerService from './components/customers/AddCustomerService';
 import CustomerServiceState from './contexts/customerService/CustomerServiceState';
 import CustomerServicesManagement from './components/customers/CustomerServicesManagement';
+import ReportState from './contexts/report/ReportState';
+import ReportDashboard from './components/reports/ReportDashboard';
+
+
 const AppContent = () => {
   const authContext = useContext(AuthContext);
   const { loadUser } = authContext;
@@ -375,6 +379,16 @@ const AppContent = () => {
               />
             }
           />
+
+<Route
+  path="/reports"
+  element={
+    <PrivateRoute
+      component={ReportDashboard}
+      roles={['admin']}
+    />
+  }
+/>
           <Route
             path="/services/edit/:id"
             element={
@@ -446,25 +460,27 @@ const App = () => {
 
   return (
     <AuthState>
-      <AlertState>
-        <EquipmentState>
-          <ScheduleState>
-            <ServiceState>
-              <FeedbackState>
-                <CustomerServiceState> 
-                  <ThemeProvider theme={theme}>
-                    <CssBaseline />
-                    <Router>
-                      <AppContent />
-                    </Router>
-                  </ThemeProvider>
-                </CustomerServiceState> 
-              </FeedbackState>
-            </ServiceState>
-          </ScheduleState>
-        </EquipmentState>
-      </AlertState>
-    </AuthState>
+  <AlertState>
+    <EquipmentState>
+      <ScheduleState>
+        <ServiceState>
+          <FeedbackState>
+            <CustomerServiceState>
+              <ReportState>
+                <ThemeProvider theme={theme}>
+                  <CssBaseline />
+                  <Router>
+                    <AppContent />
+                  </Router>
+                </ThemeProvider>
+              </ReportState>
+            </CustomerServiceState>
+          </FeedbackState>
+        </ServiceState>
+      </ScheduleState>
+    </EquipmentState>
+  </AlertState>
+</AuthState>
   );
 };
 

@@ -136,7 +136,7 @@ const Layout = ({ children }) => {
             <>
               <ListItem>
                 <Typography variant="subtitle2" color="text.secondary" sx={{ pl: 2 }}>
-                  Quản lý nội bộ
+                  Nhân viên
                 </Typography>
               </ListItem>
               <ListItemButton 

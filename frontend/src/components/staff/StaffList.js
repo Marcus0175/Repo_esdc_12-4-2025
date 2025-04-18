@@ -120,7 +120,7 @@ const StaffList = () => {
       <Paper sx={{ p: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4" component="h2">
-            Danh sách nhân viên nội bộ
+            Danh sách nhân viên
           </Typography>
           <Button
             variant="contained"

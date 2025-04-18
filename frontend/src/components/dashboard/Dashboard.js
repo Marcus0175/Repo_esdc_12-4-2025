@@ -31,7 +31,8 @@ import {
   Assignment,
   ListAlt,
   Notifications,
-  RateReview
+  RateReview,
+  Assessment
 } from '@mui/icons-material';
 
 const SIDEBAR_WIDTH = 280;
@@ -498,7 +499,40 @@ const Dashboard = () => {
           </Button>
         </Paper>
       </Grid>
-
+      <Grid item xs={12} md={6}>
+  <Paper
+    sx={{
+      p: 3,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      background: 'linear-gradient(135deg, #5E35B1 0%, #9575CD 100%)',
+      color: 'white'
+    }}
+  >
+    <Assessment sx={{ fontSize: 50, mb: 2 }} />
+    <Typography variant="h5" gutterBottom>
+      Báo cáo thống kê
+    </Typography>
+    <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+      Xem báo cáo và thống kê về hoạt động kinh doanh
+    </Typography>
+    <Button
+      variant="contained"
+      component={Link}
+      to="/reports"
+      sx={{ 
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.3)'
+        }
+      }}
+    >
+      Xem báo cáo
+    </Button>
+  </Paper>
+</Grid>
       <Grid item xs={12} md={6}>
   <Paper
     sx={{
@@ -583,7 +617,7 @@ const Dashboard = () => {
         >
           <AdminPanelSettings sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Nội bộ
+            Nhân viên
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
             Quản lý tài khoản của lễ tân và quản trị viên
