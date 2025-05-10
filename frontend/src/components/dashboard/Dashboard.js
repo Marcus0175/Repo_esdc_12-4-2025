@@ -397,7 +397,6 @@ const Dashboard = () => {
                 </ListItemButton>
               </Link>
               
-
               <Link to="/my-registrations" style={linkStyles}>
                 <ListItemButton 
                   sx={{
@@ -415,58 +414,22 @@ const Dashboard = () => {
                 </ListItemButton>
               </Link>
 
-
-<Link to="/customer-equipment" style={linkStyles}>
-  <ListItemButton 
-    sx={{
-      ...isActive('/customer-equipment') ? activeItemStyles : normalItemStyles,
-      '&:hover': {
-        backgroundColor: theme.palette.action.hover,
-      },
-      transition: 'all 0.2s ease-in-out'
-    }}
-  >
-    <ListItemIcon>
-      <FitnessCenter color={isActive('/customer-equipment') ? "primary" : "inherit"} />
-    </ListItemIcon>
-    <ListItemText primary="Thiết bị phòng tập" />
-  </ListItemButton>
-</Link>
-
-<Grid item xs={12} md={6}>
-  <Paper
-    sx={{
-      p: 3,
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      background: 'linear-gradient(135deg, #4caf50 0%, #8bc34a 100%)',
-      color: 'white'
-    }}
-  >
-    <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
-    <Typography variant="h5" gutterBottom>
-      Thiết bị phòng tập
-    </Typography>
-    <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-      Xem danh sách thiết bị có sẵn trong phòng tập
-    </Typography>
-    <Button
-      variant="contained"
-      component={Link}
-      to="/customer-equipment"
-      sx={{ 
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        '&:hover': {
-          backgroundColor: 'rgba(255, 255, 255, 0.3)'
-        }
-      }}
-    >
-      Xem thiết bị
-    </Button>
-  </Paper>
-</Grid>
+              <Link to="/customer-equipment" style={linkStyles}>
+                <ListItemButton 
+                  sx={{
+                    ...isActive('/customer-equipment') ? activeItemStyles : normalItemStyles,
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  <ListItemIcon>
+                    <FitnessCenter color={isActive('/customer-equipment') ? "primary" : "inherit"} />
+                  </ListItemIcon>
+                  <ListItemText primary="Thiết bị phòng tập" />
+                </ListItemButton>
+              </Link>
             </>
           )}
 
@@ -554,73 +517,73 @@ const Dashboard = () => {
         </Paper>
       </Grid>
       <Grid item xs={12} md={6}>
-  <Paper
-    sx={{
-      p: 3,
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      background: 'linear-gradient(135deg, #5E35B1 0%, #9575CD 100%)',
-      color: 'white'
-    }}
-  >
-    <Assessment sx={{ fontSize: 50, mb: 2 }} />
-    <Typography variant="h5" gutterBottom>
-      Báo cáo thống kê
-    </Typography>
-    <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-      Xem báo cáo và thống kê về hoạt động kinh doanh
-    </Typography>
-    <Button
-      variant="contained"
-      component={Link}
-      to="/reports"
-      sx={{ 
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        '&:hover': {
-          backgroundColor: 'rgba(255, 255, 255, 0.3)'
-        }
-      }}
-    >
-      Xem báo cáo
-    </Button>
-  </Paper>
-</Grid>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #5E35B1 0%, #9575CD 100%)',
+            color: 'white'
+          }}
+        >
+          <Assessment sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Báo cáo thống kê
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Xem báo cáo và thống kê về hoạt động kinh doanh
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/reports"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem báo cáo
+          </Button>
+        </Paper>
+      </Grid>
       <Grid item xs={12} md={6}>
-  <Paper
-    sx={{
-      p: 3,
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
-      color: 'white'
-    }}
-  >
-    <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
-    <Typography variant="h5" gutterBottom>
-      Dịch vụ khách hàng
-    </Typography>
-    <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-      Quản lý các dịch vụ và tiến độ của khách hàng
-    </Typography>
-    <Button
-      variant="contained"
-      component={Link}
-      to="/customer-services-management"
-      sx={{ 
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        '&:hover': {
-          backgroundColor: 'rgba(255, 255, 255, 0.3)'
-        }
-      }}
-    >
-      Xem dịch vụ
-    </Button>
-  </Paper>
-</Grid>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #1976d2 0%, #64b5f6 100%)',
+            color: 'white'
+          }}
+        >
+          <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Dịch vụ khách hàng
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Quản lý các dịch vụ và tiến độ của khách hàng
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/customer-services-management"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem dịch vụ
+          </Button>
+        </Paper>
+      </Grid>
 
       <Grid item xs={12} md={4}>
         <Paper
@@ -982,7 +945,43 @@ const Dashboard = () => {
         </Paper>
       </Grid>
       
-      {/* Thêm mới - Phần phản hồi */}
+      {/* Thiết bị phòng tập */}
+      <Grid item xs={12} md={6}>
+        <Paper
+          sx={{
+            p: 3,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #4caf50 0%, #8bc34a 100%)',
+            color: 'white'
+          }}
+        >
+          <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
+          <Typography variant="h5" gutterBottom>
+            Thiết bị phòng tập
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+            Xem danh sách thiết bị có sẵn trong phòng tập
+          </Typography>
+          <Button
+            variant="contained"
+            component={Link}
+            to="/customer-equipment"
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              }
+            }}
+          >
+            Xem thiết bị
+          </Button>
+        </Paper>
+      </Grid>
+      
+      {/* Phần phản hồi */}
       <Grid item xs={12} md={6}>
         <Paper
           sx={{
