@@ -44,7 +44,7 @@ import CustomerServiceState from './contexts/customerService/CustomerServiceStat
 import CustomerServicesManagement from './components/customers/CustomerServicesManagement';
 import ReportState from './contexts/report/ReportState';
 import ReportDashboard from './components/reports/ReportDashboard';
-
+import CustomerEquipmentList from './components/equipment/CustomerEquipmentList';
 
 const AppContent = () => {
   const authContext = useContext(AuthContext);
@@ -246,6 +246,17 @@ const AppContent = () => {
     />
   }
 />
+
+<Route
+  path="/customer-equipment"
+  element={
+    <PrivateRoute
+      component={CustomerEquipmentList}
+      roles={['customer']}
+    />
+  }
+/>
+
 <Route
   path="/customers/:customerId/services/add"
   element={

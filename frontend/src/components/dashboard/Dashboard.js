@@ -397,6 +397,7 @@ const Dashboard = () => {
                 </ListItemButton>
               </Link>
               
+
               <Link to="/my-registrations" style={linkStyles}>
                 <ListItemButton 
                   sx={{
@@ -413,6 +414,59 @@ const Dashboard = () => {
                   <ListItemText primary="Đăng ký của tôi" />
                 </ListItemButton>
               </Link>
+
+
+<Link to="/customer-equipment" style={linkStyles}>
+  <ListItemButton 
+    sx={{
+      ...isActive('/customer-equipment') ? activeItemStyles : normalItemStyles,
+      '&:hover': {
+        backgroundColor: theme.palette.action.hover,
+      },
+      transition: 'all 0.2s ease-in-out'
+    }}
+  >
+    <ListItemIcon>
+      <FitnessCenter color={isActive('/customer-equipment') ? "primary" : "inherit"} />
+    </ListItemIcon>
+    <ListItemText primary="Thiết bị phòng tập" />
+  </ListItemButton>
+</Link>
+
+<Grid item xs={12} md={6}>
+  <Paper
+    sx={{
+      p: 3,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      background: 'linear-gradient(135deg, #4caf50 0%, #8bc34a 100%)',
+      color: 'white'
+    }}
+  >
+    <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
+    <Typography variant="h5" gutterBottom>
+      Thiết bị phòng tập
+    </Typography>
+    <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
+      Xem danh sách thiết bị có sẵn trong phòng tập
+    </Typography>
+    <Button
+      variant="contained"
+      component={Link}
+      to="/customer-equipment"
+      sx={{ 
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.3)'
+        }
+      }}
+    >
+      Xem thiết bị
+    </Button>
+  </Paper>
+</Grid>
             </>
           )}
 

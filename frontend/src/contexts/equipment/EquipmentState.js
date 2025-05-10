@@ -344,6 +344,24 @@ const EquipmentState = props => {
       });
     }
   };
+  // Get equipment for customers
+const getCustomerEquipment = async () => {
+  setLoading();
+  
+  try {
+    const res = await api.get('/equipment/customer');
+    
+    dispatch({
+      type: GET_EQUIPMENT,
+      payload: res.data
+    });
+  } catch (err) {
+    dispatch({
+      type: EQUIPMENT_ERROR,
+      payload: err.response?.data?.message || 'Lỗi khi tải danh sách thiết bị'
+    });
+  }
+};
 
   // Get overdue maintenance
   const getOverdueMaintenance = async () => {
@@ -387,7 +405,6 @@ const EquipmentState = props => {
         addEquipment,
         updateEquipment,
         updateEquipmentStatus,
-        // Đã loại bỏ deleteEquipment khỏi context value
         uploadEquipmentImage,
         clearEquipment,
         filterEquipment,
@@ -398,7 +415,7 @@ const EquipmentState = props => {
         getEquipmentMaintenance,
         addMaintenance,
         updateMaintenance,
-        // Đã loại bỏ deleteMaintenance khỏi context value
+        getCustomerEquipment, 
         getUpcomingMaintenance,
         getOverdueMaintenance,
         clearMaintenance

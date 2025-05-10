@@ -99,4 +99,12 @@ router.put(
   equipmentController.uploadEquipmentImage
 );
 
+// @route   GET api/equipment/customer
+// @desc    Get equipment for customers
+// @access  Private (customer)
+router.get(
+  '/customer',
+  [auth, roleCheck('customer')],
+  equipmentController.getCustomerEquipment
+);
 module.exports = router;

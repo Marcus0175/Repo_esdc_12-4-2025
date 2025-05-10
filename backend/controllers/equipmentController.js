@@ -244,6 +244,23 @@ exports.getEquipmentNeedingMaintenance = async (req, res) => {
   }
 };
 
+// @desc    Get equipment for customers (only in-use equipment)
+// @route   GET /api/equipment/customer
+// @access  Private (customer)
+exports.getCustomerEquipment = async (req, res) => {
+  try {
+    // Only return equipment that's in use and active
+    const equipment = await Equipment.find({ 
+      status: 'in-use' 
+    }).sort({ type: 1, name: 1 });
+    
+    res.json(equipment);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Lỗi server');
+  }
+};
+
 // @desc    Update equipment status
 // @route   PATCH /api/equipment/:id/status
 // @access  Private (admin only)
