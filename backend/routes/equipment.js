@@ -27,6 +27,16 @@ router.get(
 // @route   GET api/equipment/:id
 // @desc    Get equipment by ID
 // @access  Private (admin, receptionist)
+
+// @route   GET api/equipment/customer
+// @desc    Get equipment for customers
+// @access  Private (customer)
+router.get(
+  '/customer',
+  [auth, roleCheck('admin', 'receptionist', 'customer')], // Cho phép cả admin, receptionist và customer
+  equipmentController.getCustomerEquipment
+);
+
 router.get(
   '/:id',
   [auth, roleCheck('admin', 'receptionist')],
@@ -99,13 +109,5 @@ router.put(
   equipmentController.uploadEquipmentImage
 );
 
-// @route   GET api/equipment/customer
-// @desc    Get equipment for customers
-// @access  Private (customer)
-router.get(
-  '/customer',
-  [auth], // Đã sửa từ [auth, roleCheck('customer')]
-  equipmentController.getCustomerEquipment
-);
 
 module.exports = router;
