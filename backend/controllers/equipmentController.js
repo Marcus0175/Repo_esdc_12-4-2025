@@ -161,6 +161,37 @@ exports.updateEquipment = async (req, res) => {
   }
 };
 
+// @desc    Update equipment status
+// @route   PATCH /api/equipment/:id/status
+// @access  Private (admin only)
+exports.updateEquipmentStatus = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { status } = req.body;
+
+  try {
+    let equipment = await Equipment.findById(req.params.id);
+
+    if (!equipment) {
+      return res.status(404).json({ message: 'Không tìm thấy thiết bị' });
+    }
+
+    equipment.status = status;
+    await equipment.save();
+
+    res.json(equipment);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ message: 'Không tìm thấy thiết bị' });
+    }
+    res.status(500).send('Lỗi server');
+  }
+};
+
 // @desc    Delete equipment
 // @route   DELETE /api/equipment/:id
 // @access  Private (admin only)
@@ -244,50 +275,19 @@ exports.getEquipmentNeedingMaintenance = async (req, res) => {
   }
 };
 
-// @desc    Get equipment for customers (only in-use equipment)
+// @desc    Get equipment for customers
 // @route   GET /api/equipment/customer
 // @access  Private (customer)
 exports.getCustomerEquipment = async (req, res) => {
   try {
-    // Only return equipment that's in use and active
+    // Return equipment that's in use or new and not marked as damaged, maintenance, or retired
     const equipment = await Equipment.find({ 
-      status: 'in-use' 
+      status: { $in: ['in-use', 'new'] }
     }).sort({ type: 1, name: 1 });
     
     res.json(equipment);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Lỗi server');
-  }
-};
-
-// @desc    Update equipment status
-// @route   PATCH /api/equipment/:id/status
-// @access  Private (admin only)
-exports.updateEquipmentStatus = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  const { status } = req.body;
-
-  try {
-    let equipment = await Equipment.findById(req.params.id);
-
-    if (!equipment) {
-      return res.status(404).json({ message: 'Không tìm thấy thiết bị' });
-    }
-
-    equipment.status = status;
-    await equipment.save();
-
-    res.json(equipment);
-  } catch (err) {
-    console.error(err.message);
-    if (err.kind === 'ObjectId') {
-      return res.status(404).json({ message: 'Không tìm thấy thiết bị' });
-    }
     res.status(500).send('Lỗi server');
   }
 };

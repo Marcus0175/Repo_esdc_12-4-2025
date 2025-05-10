@@ -1,5 +1,6 @@
 import React, { useEffect, useContext, useState } from 'react';
 import EquipmentContext from '../../contexts/equipment/equipmentContext';
+import AlertContext from '../../contexts/alert/alertContext';
 import {
   Container,
   Paper,
@@ -13,18 +14,32 @@ import {
   InputAdornment,
   Chip,
   CircularProgress,
-  Divider
+  Divider,
+  Alert
 } from '@mui/material';
 import { Search, FitnessCenter, Build, Clear } from '@mui/icons-material';
 
 const CustomerEquipmentList = () => {
   const equipmentContext = useContext(EquipmentContext);
+  const alertContext = useContext(AlertContext);
   const { equipment, loading, error, getCustomerEquipment } = equipmentContext;
+  const { setAlert } = alertContext;
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
   
   useEffect(() => {
-    getCustomerEquipment();
+    const loadEquipment = async () => {
+      try {
+        await getCustomerEquipment();
+        setHasAttemptedLoad(true);
+      } catch (err) {
+        setAlert('Không thể tải thiết bị phòng tập. Vui lòng thử lại sau.', 'error');
+        console.error('Error loading customer equipment:', err);
+      }
+    };
+    
+    loadEquipment();
     // eslint-disable-next-line
   }, []);
   
@@ -63,6 +78,12 @@ const CustomerEquipmentList = () => {
           </Typography>
         </Box>
         
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+        
         <TextField
           fullWidth
           placeholder="Tìm kiếm thiết bị theo tên, loại, mô tả hoặc vị trí..."
@@ -88,9 +109,18 @@ const CustomerEquipmentList = () => {
         />
         
         {filteredEquipment.length === 0 ? (
-          <Typography sx={{ textAlign: 'center', py: 4 }}>
-            Không tìm thấy thiết bị
-          </Typography>
+          <Box textAlign="center" py={4}>
+            <FitnessCenter sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              {hasAttemptedLoad ? 'Không tìm thấy thiết bị phòng tập' : 'Đang tải thiết bị...'}
+            </Typography>
+            {hasAttemptedLoad && (
+              <Typography variant="body1" color="text.secondary">
+                Hiện tại chưa có thiết bị nào được đánh dấu sẵn sàng sử dụng trong phòng tập.
+                Vui lòng quay lại sau.
+              </Typography>
+            )}
+          </Box>
         ) : (
           <>
             {Object.keys(groupedEquipment).map(type => (
