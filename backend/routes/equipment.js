@@ -104,7 +104,8 @@ router.put(
 // @access  Private (customer)
 router.get(
   '/customer',
-  [auth, roleCheck('customer')],
+  [auth], // Đã sửa từ [auth, roleCheck('customer')]
   equipmentController.getCustomerEquipment
 );
+
 module.exports = router;

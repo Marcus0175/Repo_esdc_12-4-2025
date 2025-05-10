@@ -34,8 +34,8 @@ const CustomerEquipmentList = () => {
         await getCustomerEquipment();
         setHasAttemptedLoad(true);
       } catch (err) {
-        setAlert('Không thể tải thiết bị phòng tập. Vui lòng thử lại sau.', 'error');
         console.error('Error loading customer equipment:', err);
+        setAlert('Không thể tải thiết bị phòng tập. Vui lòng thử lại sau.', 'error');
       }
     };
     
