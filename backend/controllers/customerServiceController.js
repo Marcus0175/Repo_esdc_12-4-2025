@@ -87,7 +87,7 @@ exports.addCustomerService = async (req, res) => {
     }
     
     // Tính tổng giá
-    const totalPrice = service.price * numberOfSessions;
+    const totalPrice = service.price;
     
     // Tạo đăng ký mới
     const newRegistration = new ServiceRegistration({
@@ -157,7 +157,7 @@ exports.updateCustomerService = async (req, res) => {
       }
       
       registration.numberOfSessions = numberOfSessions;
-      registration.totalPrice = service.price * numberOfSessions;
+      registration.totalPrice = service.price;
     }
     
     if (completedSessions !== undefined) {
