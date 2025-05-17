@@ -38,6 +38,7 @@ app.use('/api/work-schedules', require('./routes/workSchedules'));
 app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api/customer-services', require('./routes/customerServices'));
 app.use('/api/reports', require('./routes/reports'));
+app.use('/api/news', require('./routes/news'));
 // Default route
 app.get('/', (req, res) => {
   res.send('API is running');

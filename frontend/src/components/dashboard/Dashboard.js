@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthContext from '../../contexts/auth/authContext';
 import api from '../../utils/api';
+import NewsWidget from '../news/NewsWidget';
 import {
   Box,
   Grid,
@@ -979,6 +980,10 @@ const Dashboard = () => {
             Xem thiết bị
           </Button>
         </Paper>
+      </Grid>
+
+      <Grid item xs={12}>
+          <NewsWidget maxItems={3} showFeaturedOnly={true} title="Tin tức nổi bật" />
       </Grid>
       
       {/* Phần phản hồi */}

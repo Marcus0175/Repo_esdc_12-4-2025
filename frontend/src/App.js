@@ -45,6 +45,10 @@ import CustomerServicesManagement from './components/customers/CustomerServicesM
 import ReportState from './contexts/report/ReportState';
 import ReportDashboard from './components/reports/ReportDashboard';
 import CustomerEquipmentList from './components/equipment/CustomerEquipmentList';
+import NewsState from './contexts/news/NewsState';
+import NewsList from './components/news/NewsList';
+import NewsForm from './components/news/NewsForm';
+import NewsDetail from './components/news/NewsDetail';
 
 const AppContent = () => {
   const authContext = useContext(AuthContext);
@@ -447,6 +451,44 @@ const AppContent = () => {
               />
             }
           />
+
+          {/* News Management Routes */}
+<Route
+  path="/news"
+  element={
+    <PrivateRoute
+      component={NewsList}
+      roles={['admin', 'receptionist', 'trainer', 'customer']}
+    />
+  }
+/>
+<Route
+  path="/news/add"
+  element={
+    <PrivateRoute
+      component={NewsForm}
+      roles={['admin', 'receptionist']}
+    />
+  }
+/>
+<Route
+  path="/news/edit/:id"
+  element={
+    <PrivateRoute
+      component={NewsForm}
+      roles={['admin', 'receptionist']}
+    />
+  }
+/>
+<Route
+  path="/news/:id"
+  element={
+    <PrivateRoute
+      component={NewsDetail}
+      roles={['admin', 'receptionist', 'trainer', 'customer']}
+    />
+  }
+/>
           
           {/* Redirect */}
           <Route path="/" element={<Navigate to="/dashboard" />} />
@@ -478,12 +520,14 @@ const App = () => {
           <FeedbackState>
             <CustomerServiceState>
               <ReportState>
-                <ThemeProvider theme={theme}>
-                  <CssBaseline />
-                  <Router>
-                    <AppContent />
-                  </Router>
-                </ThemeProvider>
+                <NewsState>
+                  <ThemeProvider theme={theme}>
+                    <CssBaseline />
+                    <Router>
+                      <AppContent />
+                    </Router>
+                  </ThemeProvider>
+                </NewsState>
               </ReportState>
             </CustomerServiceState>
           </FeedbackState>
