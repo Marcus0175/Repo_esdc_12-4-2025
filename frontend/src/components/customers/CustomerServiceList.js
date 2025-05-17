@@ -348,7 +348,7 @@ size="small"
               <Grid item xs={6} md={3}>
                 <Box textAlign="center">
                   <Typography variant="h4">{serviceSummary.completedSessions}/{serviceSummary.totalSessions}</Typography>
-                  <Typography variant="body2">Buổi đã hoàn thành</Typography>
+                  <Typography variant="body2">Hoàn thành</Typography>
                 </Box>
               </Grid>
               <Grid item xs={6} md={3}>

@@ -889,7 +889,7 @@ const Dashboard = () => {
         >
           <FitnessCenter sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Huấn luyện viên
+            Đăng ký dịch vụ
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
             Xem danh sách huấn luyện viên và đăng ký dịch vụ
@@ -963,7 +963,7 @@ const Dashboard = () => {
             Thiết bị phòng tập
           </Typography>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center' }}>
-            Xem danh sách thiết bị có sẵn trong phòng tập
+            Xem danh sách thiết bị trong phòng tập
           </Typography>
           <Button
             variant="contained"

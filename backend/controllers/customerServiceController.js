@@ -16,6 +16,7 @@ exports.getCustomerServices = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy thông tin khách hàng' });
     }
     
+    // Lấy tất cả đăng ký dịch vụ của khách hàng
     const registrations = await ServiceRegistration.find({ customer: customer._id })
       .populate({
         path: 'trainer',
@@ -25,7 +26,51 @@ exports.getCustomerServices = async (req, res) => {
       .populate('workSchedule')
       .sort({ createdAt: -1 });
     
-    res.json(registrations);
+    // Gộp các đăng ký theo service và trainer
+    const groupedRegistrations = {};
+    
+    registrations.forEach(reg => {
+      const key = `${reg.service._id}-${reg.trainer._id}-${reg.status}`;
+      
+      if (!groupedRegistrations[key]) {
+        groupedRegistrations[key] = {
+          _id: reg._id, // Sử dụng ID của đăng ký đầu tiên
+          customer: reg.customer,
+          trainer: reg.trainer,
+          service: reg.service,
+          workSchedule: reg.workSchedule,
+          status: reg.status,
+          startDate: reg.startDate,
+          endDate: reg.endDate,
+          numberOfSessions: reg.numberOfSessions,
+          completedSessions: reg.completedSessions,
+          totalPrice: reg.totalPrice,
+          notes: reg.notes,
+          rejectionReason: reg.rejectionReason,
+          createdAt: reg.createdAt
+        };
+      } else {
+        // Cộng dồn số buổi và tổng tiền
+        groupedRegistrations[key].numberOfSessions += reg.numberOfSessions;
+        groupedRegistrations[key].completedSessions += reg.completedSessions;
+        groupedRegistrations[key].totalPrice += reg.totalPrice;
+        
+        // Cập nhật ngày bắt đầu/kết thúc nếu cần
+        if (new Date(reg.startDate) < new Date(groupedRegistrations[key].startDate)) {
+          groupedRegistrations[key].startDate = reg.startDate;
+        }
+        
+        if (reg.endDate && (!groupedRegistrations[key].endDate || 
+            new Date(reg.endDate) > new Date(groupedRegistrations[key].endDate))) {
+          groupedRegistrations[key].endDate = reg.endDate;
+        }
+      }
+    });
+    
+    // Chuyển đổi lại thành mảng
+    const groupedArray = Object.values(groupedRegistrations);
+    
+    res.json(groupedArray);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Lỗi server');
@@ -240,15 +285,27 @@ exports.getServiceSummary = async (req, res) => {
     // Lấy tất cả đăng ký dịch vụ của khách hàng
     const registrations = await ServiceRegistration.find({ customer: customer._id });
     
+    // Gộp các đăng ký theo dịch vụ và huấn luyện viên để tránh tính trùng
+    const uniqueRegistrations = [];
+    const registrationKeys = new Set();
+    
+    registrations.forEach(reg => {
+      const key = `${reg.service}-${reg.trainer}-${reg.status}`;
+      if (!registrationKeys.has(key)) {
+        registrationKeys.add(key);
+        uniqueRegistrations.push(reg);
+      }
+    });
+    
     // Tổng hợp thông tin
     const summary = {
-      totalRegistrations: registrations.length,
-      activeRegistrations: registrations.filter(reg => reg.status === 'approved').length,
-      completedRegistrations: registrations.filter(reg => reg.status === 'completed').length,
-      canceledRegistrations: registrations.filter(reg => reg.status === 'canceled').length,
+      totalRegistrations: uniqueRegistrations.length,
+      activeRegistrations: uniqueRegistrations.filter(reg => reg.status === 'approved').length,
+      completedRegistrations: uniqueRegistrations.filter(reg => reg.status === 'completed').length,
+      canceledRegistrations: uniqueRegistrations.filter(reg => reg.status === 'canceled').length,
       totalSessions: registrations.reduce((sum, reg) => sum + reg.numberOfSessions, 0),
       completedSessions: registrations.reduce((sum, reg) => sum + reg.completedSessions, 0),
-      totalSpending: registrations.reduce((sum, reg) => sum + reg.totalPrice, 0)
+      totalSpending: uniqueRegistrations.reduce((sum, reg) => sum + reg.totalPrice, 0)
     };
     
     res.json(summary);
