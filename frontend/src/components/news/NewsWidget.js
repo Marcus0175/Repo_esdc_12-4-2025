@@ -16,7 +16,7 @@ import {
 import { 
   Star, 
   CalendarToday,
-  Visibility
+  RemoveRedEye
 } from '@mui/icons-material';
 
 const NewsWidget = ({ maxItems = 3, showFeaturedOnly = false, title = "Tin tức mới nhất" }) => {
@@ -177,7 +177,7 @@ const NewsWidget = ({ maxItems = 3, showFeaturedOnly = false, title = "Tin tức
                       {formatDate(item.createdAt)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      <Visibility fontSize="inherit" sx={{ mr: 0.5, verticalAlign: 'middle' }} />
+                      <RemoveRedEye fontSize="inherit" sx={{ mr: 0.5, verticalAlign: 'middle' }} />
                       {item.viewCount}
                     </Typography>
                   </Box>

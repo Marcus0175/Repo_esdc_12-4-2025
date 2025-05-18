@@ -44,7 +44,7 @@ import {
   VisibilityOff,
   CalendarToday,
   Category as CategoryIcon,
-  Visibility
+  RemoveRedEye
 } from '@mui/icons-material';
 
 const NewsList = () => {
@@ -364,7 +364,7 @@ const NewsList = () => {
                         </Typography>
                       </Box>
                       <Box display="flex" alignItems="center">
-                        <Visibility fontSize="small" color="action" sx={{ mr: 0.5 }} />
+                        <RemoveRedEye fontSize="small" color="action" sx={{ mr: 0.5 }} />
                         <Typography variant="caption" color="text.secondary">
                           {item.viewCount}
                         </Typography>
@@ -413,7 +413,7 @@ const NewsList = () => {
                             color={item.active ? "success" : "error"}
                             onClick={() => handleToggleActive(item._id)}
                           >
-                            {item.active ? <Visibility /> : <VisibilityOff />}
+                            {item.active ? <RemoveRedEye /> : <VisibilityOff />}
                           </IconButton>
                         </Tooltip>
                       </>

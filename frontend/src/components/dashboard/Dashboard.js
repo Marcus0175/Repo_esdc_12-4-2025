@@ -33,11 +33,12 @@ import {
   ListAlt,
   Notifications,
   RateReview,
-  Assessment
+  Assessment,
+  Add
 } from '@mui/icons-material';
 
 const SIDEBAR_WIDTH = 280;
-
+const BACKGROUND_IMAGE = 'https://virtualbackgrounds.site/wp-content/uploads/2020/09/modern-home-gym.jpg';
 const Dashboard = () => {
   const theme = useTheme();
   const authContext = useContext(AuthContext);
@@ -70,6 +71,19 @@ const Dashboard = () => {
     fetchPendingRegistrations();
   }, [isTrainer]);
 
+  const backgroundStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  backgroundImage: `url(${BACKGROUND_IMAGE})`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+  opacity: 0.4, // Độ mờ để đọc được nội dung bên trên
+  zIndex: -1,
+};
   const Sidebar = () => {
     // Function to determine if a path is active
     const isActive = (path) => {
@@ -217,6 +231,50 @@ const Dashboard = () => {
               <ListItemText primary="Thêm huấn luyện viên mới" />
             </ListItemButton>
           </Link>
+
+          {(isAdmin || user?.role === 'receptionist') && (
+  <>
+    <Box sx={{ p: 2, pt: 3 }}>
+      <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+        QUẢN LÝ TIN TỨC
+      </Typography>
+    </Box>
+    
+    <Link to="/news" style={linkStyles}>
+      <ListItemButton 
+        sx={{
+          ...isActive('/news') && !location.pathname.includes('/news/add') ? activeItemStyles : normalItemStyles,
+          '&:hover': {
+            backgroundColor: theme.palette.action.hover,
+          },
+          transition: 'all 0.2s ease-in-out'
+        }}
+      >
+        <ListItemIcon>
+          <ListIcon color={isActive('/news') && !location.pathname.includes('/news/add') ? "primary" : "inherit"} />
+        </ListItemIcon>
+        <ListItemText primary="Danh sách tin tức" />
+      </ListItemButton>
+    </Link>
+    
+    <Link to="/news/add" style={linkStyles}>
+      <ListItemButton 
+        sx={{
+          ...isActive('/news/add') ? activeItemStyles : normalItemStyles,
+          '&:hover': {
+            backgroundColor: theme.palette.action.hover,
+          },
+          transition: 'all 0.2s ease-in-out'
+        }}
+      >
+        <ListItemIcon>
+          <Add color={isActive('/news/add') ? "primary" : "inherit"} />
+        </ListItemIcon>
+        <ListItemText primary="Thêm tin tức mới" />
+      </ListItemButton>
+    </Link>
+  </>
+)}
 
           {(isAdmin || user?.role === 'receptionist') && (
             <>
@@ -693,6 +751,10 @@ const Dashboard = () => {
         </Paper>
       </Grid>
 
+      <Grid item xs={12}>
+  <NewsWidget maxItems={3} showFeaturedOnly={true} title="Tin tức nổi bật" />
+</Grid>
+
       <Grid item xs={12} md={6}>
         <Paper
           sx={{
@@ -801,7 +863,9 @@ const Dashboard = () => {
           </Button>
         </Paper>
       </Grid>
-
+        <Grid item xs={12}>
+              <NewsWidget maxItems={3} showFeaturedOnly={true} title="Tin tức nổi bật" />
+      </Grid>
       <Grid item xs={12} md={6}>
         <Paper
           sx={{
@@ -1079,6 +1143,9 @@ const Dashboard = () => {
           </Paper>
         </Grid>
         
+        <Grid item xs={12}>
+      <NewsWidget maxItems={3} showFeaturedOnly={true} title="Tin tức nổi bật" />
+      </Grid>
         <Grid item xs={12} md={6}>
           <Paper
             sx={{
@@ -1172,6 +1239,7 @@ const Dashboard = () => {
 
   return (
     <Box sx={{ display: 'flex' }}>
+      <Box sx={backgroundStyle} />
       {/* Only show sidebar for admin and receptionist */}
       {showSidebar && <Sidebar />}
       
@@ -1183,7 +1251,9 @@ const Dashboard = () => {
           ml: showSidebar ? `${SIDEBAR_WIDTH}px` : 0,
           mt: '64px', // Height of AppBar
           backgroundColor: theme.palette.background.default,
-          minHeight: '100vh'
+          minHeight: '100vh',
+          position: 'relative', // Để hiển thị đúng thứ tự các lớp
+          zIndex: 1 // Hiển thị trên nền
         }}
       >
         {renderDashboardContent()}

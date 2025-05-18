@@ -31,7 +31,7 @@ import {
   Delete,
   Star,
   StarBorder,
-  Visibility,
+  RemoveRedEye,
   VisibilityOff,
   CalendarToday,
   Person,
@@ -281,7 +281,7 @@ const NewsDetail = () => {
             />
             
             <Chip
-              icon={<Visibility />}
+              icon={<RemoveRedEye />}
               label={`${currentNews.viewCount} lượt xem`}
               variant="outlined"
               size="medium"
@@ -303,7 +303,7 @@ const NewsDetail = () => {
                     color={currentNews.active ? "success" : "error"}
                     onClick={handleToggleActive}
                   >
-                    {currentNews.active ? <Visibility /> : <VisibilityOff />}
+                    {currentNews.active ? <RemoveRedEye /> : <VisibilityOff />}
                   </IconButton>
                 </Tooltip>
               </Box>

@@ -508,6 +508,9 @@ const App = () => {
       secondary: {
         main: '#f50057',
       },
+      background: {
+      default: 'transparent', // Thay đổi ở đây
+    },
     },
   });
 
